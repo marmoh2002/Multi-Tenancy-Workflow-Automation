@@ -165,10 +165,39 @@ The core algorithm that powers workflow validation. Uses **Kahn's topological so
 
 1. **Structural checks** — rejects empty or duplicate step IDs
 2. **Dependency reference checks** — every `DependsOn` entry must point to an existing step; no duplicates allowed
-3. **Cycle detection** — builds an adjacency list and in-degree map, then processes nodes via BFS; if not all nodes are visited, a cycle exists
-4. **Topological ordering** — on success, returns a valid execution order
+3. **Graph construction** — builds an `adjacency` map (prerequisite → dependents) and an `inDegree` map (step → number of incoming dependencies)
+4. **Queue-based BFS traversal** — processes nodes with `inDegree == 0` and decrements downstream in-degrees
+5. **Cycle detection** — verifies if all nodes were visited; isolates stuck nodes if a cycle exists
+6. **Topological ordering** — on success, returns a valid execution order
 
-**Example — Diamond DAG:**
+#### How Cycle Detection Works (Intuition & Mechanics)
+
+Kahn's algorithm detects cycles through **in-degree starvation** (mathematical deadlock):
+
+1. **In-Degree as a Dependency Counter:**
+   Each node's `inDegree` represents the number of uncompleted prerequisites it must wait for.
+   * `inDegree == 0` means all prerequisites are satisfied — the step is unlocked and enqueued to `ready`.
+2. **Simulating Execution:**
+   When a step is popped from `ready`, we append it to `orderedStepIds` and decrement the `inDegree` of all downstream steps that depend on it (`inDegree[dependent]--`). If any dependent reaches `0`, it is pushed to `ready`.
+3. **The Cycle Trap (Deadlock):**
+   * **Mathematical Law:** In any directed cycle (e.g., $A \rightarrow B \rightarrow A$ or $B \rightarrow C \rightarrow D \rightarrow B$), every node in the loop depends on another node in the loop.
+   * Because every node in the loop is waiting on something else in the loop, **none of them can ever reach `inDegree == 0`**.
+   * Consequently, **none of the cyclic nodes can ever enter the `ready` queue**.
+4. **Detection Condition:**
+   When the `ready` queue empties:
+   $$\text{orderedStepIds.Count} \neq \text{workflow.Steps.Count}$$
+   If the count of processed nodes is less than the total steps, a cycle is guaranteed to exist.
+5. **Pinpointing Culprit Steps:**
+   The validator identifies which steps caused the deadlock by finding all steps that were never visited:
+   ```csharp
+   var stuck = workflow.Steps
+       .Select(step => step.Id)
+       .Where(id => !processed.Contains(id))
+       .ToList();
+   ```
+   This allows the platform to return actionable errors: `Cycle detected involving steps: B, C, D.`
+
+**Example 1 — Diamond DAG (Valid):**
 ```
     A
    / \
@@ -176,7 +205,26 @@ The core algorithm that powers workflow validation. Uses **Kahn's topological so
    \ /
     D
 ```
-Steps B and C can run in **parallel** after A completes. Step D waits for **both** B and C (join/barrier).
+* Initial: `inDegree(A)=0`, `inDegree(B)=1`, `inDegree(C)=1`, `inDegree(D)=2`.
+* `ready` starts with `[A]`.
+* Process `A`: decrements `B` (now 0) and `C` (now 0) → `ready` has `[B, C]`.
+* Process `B`: decrements `D` (now 1).
+* Process `C`: decrements `D` (now 0) → `ready` has `[D]`.
+* Process `D`: all 4 steps visited. **Valid DAG!**
+
+**Example 2 — Circular Deadlock (Cycle):**
+```
+  A ───> B ───> C
+         ▲      │
+         └──────┘ (C depends on B, B depends on C)
+```
+* `inDegree(A)=0`, `inDegree(B)=2` (depends on A and C), `inDegree(C)=1` (depends on B).
+* `ready` starts with `[A]`.
+* Process `A`: decrements `B` from 2 to 1.
+* `B` is still at 1 (waiting on `C`), so `B` **never enters `ready`**.
+* `ready` is now empty. The loop halts.
+* Processed: `[A]` (1 node). Total: 3 nodes.
+* Cycle detected! Stuck nodes: `[B, C]`.
 
 ### Domain Models
 
@@ -187,7 +235,7 @@ Steps B and C can run in **parallel** after A completes. Step D waits for **both
 
 ### Test Coverage
 
-7 xUnit test cases covering:
+8 xUnit test cases covering:
 
 | Test | Validates |
 |------|-----------|
