@@ -121,7 +121,7 @@ public sealed class KahnDagValidator : IDagValidator
         if (orderedStepIds.Count != workflow.Steps.Count)
         {
             var processed = new HashSet<string>(orderedStepIds);
-
+            // detect culprit steps (those that are not processed)
             var stuck = workflow.Steps
                 .Select(step => step.Id)
                 .Where(id => !processed.Contains(id))
