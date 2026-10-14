@@ -1,4 +1,4 @@
-namespace DagWorkflow.Core;
+namespace WorkflowAutomation.Workflows.Core;
 
 public sealed class WorkflowExecutionContext
 {

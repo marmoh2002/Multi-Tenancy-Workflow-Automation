@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DagWorkflow.Core\DagWorkflow.Core.csproj" />
+    <ProjectReference Include="../../src/Modules/Workflows/WorkflowAutomation.Workflows.Core/WorkflowAutomation.Workflows.Core.csproj" />
   </ItemGroup>
 
 </Project>

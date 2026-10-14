@@ -1,6 +1,6 @@
-using DagWorkflow.Core.Definitions;
+using WorkflowAutomation.Workflows.Core.Definitions;
 
-namespace DagWorkflow.Core;
+namespace WorkflowAutomation.Workflows.Core;
 
 public interface IDagValidator
 {

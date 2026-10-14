@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DagWorkflow.Core.Tests;
+namespace WorkflowAutomation.Workflows.Core.Tests;
 
 internal static class ReadOnlyListExtensions
 {

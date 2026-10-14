@@ -1,8 +1,8 @@
-using DagWorkflow.Core.Definitions;
+using WorkflowAutomation.Workflows.Core.Definitions;
 
 using Xunit;
 
-namespace DagWorkflow.Core.Tests;
+namespace WorkflowAutomation.Workflows.Core.Tests;
 
 public class DagValidatorTests
 {

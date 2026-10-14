@@ -1,4 +1,4 @@
-namespace DagWorkflow.Core.Definitions;
+namespace WorkflowAutomation.Workflows.Core.Definitions;
 
 public sealed class StepDefinition
 {
