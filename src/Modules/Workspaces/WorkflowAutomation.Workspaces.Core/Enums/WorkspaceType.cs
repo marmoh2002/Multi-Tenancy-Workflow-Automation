@@ -1,4 +1,4 @@
-namespace WorkflowAutomation.Workspaces.Core;
+namespace WorkflowAutomation.Workspaces.Core.Enums;
 
 public enum WorkspaceType : byte
 {
