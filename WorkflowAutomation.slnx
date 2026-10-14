@@ -1,6 +1,9 @@
 <Solution>
   <Folder Name="/src/" />
   <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/WorkflowAutomation.Identity.Core/WorkflowAutomation.Identity.Core.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Workflows/">
     <Project Path="src/Modules/Workflows/WorkflowAutomation.Workflows.Core/WorkflowAutomation.Workflows.Core.csproj" />
   </Folder>
