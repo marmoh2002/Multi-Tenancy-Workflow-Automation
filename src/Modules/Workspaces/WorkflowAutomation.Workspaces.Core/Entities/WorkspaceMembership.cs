@@ -4,7 +4,7 @@ using WorkflowAutomation.Shared.Kernel.Primitives;
 using WorkflowAutomation.Workspaces.Core.Enums;
 public sealed class WorkspaceMembership : AuditableEntity<Guid>
 {
-    public readonly Guid WorkspaceId { get; private set; }
+    public Guid WorkspaceId { get; private set; }
     public Guid UserId { get; private set; }
     public WorkspaceRole Role { get; private set; }
     public bool IsActive { get; private set; }

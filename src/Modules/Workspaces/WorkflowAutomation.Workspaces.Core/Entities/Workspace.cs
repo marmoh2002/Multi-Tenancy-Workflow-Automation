@@ -3,7 +3,7 @@ namespace WorkflowAutomation.Workspaces.Core.Entities;
 using WorkflowAutomation.Shared.Kernel.Primitives;
 using WorkflowAutomation.Workspaces.Core.Enums;
 
-public class Workspace : AuditableEntity<Guid>
+public sealed class Workspace : AuditableEntity<Guid>
 {
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; } = string.Empty;
