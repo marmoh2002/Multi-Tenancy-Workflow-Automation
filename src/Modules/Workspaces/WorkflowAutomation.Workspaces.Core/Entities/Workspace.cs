@@ -9,7 +9,7 @@ public class Workspace : AuditableEntity<Guid>
     private Workspace()
     {
     }
-    
+
     private Workspace(
         Guid id,
         string name,
