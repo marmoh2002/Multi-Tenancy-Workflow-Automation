@@ -1,4 +1,4 @@
-namespace WorkflowAutomation.SharedKernel.Time;
+namespace WorkflowAutomation.Shared.Kernel.Time;
 
 public interface IClock
 {

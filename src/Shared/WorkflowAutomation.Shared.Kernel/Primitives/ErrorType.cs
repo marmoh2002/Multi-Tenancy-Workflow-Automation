@@ -1,4 +1,4 @@
-namespace WorkflowAutomation.SharedKernel.Primitives;
+namespace WorkflowAutomation.Shared.Kernel.Primitives;
 
 public enum ErrorType
 {

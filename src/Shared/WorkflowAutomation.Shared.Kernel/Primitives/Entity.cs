@@ -1,4 +1,4 @@
-namespace WorkflowAutomation.SharedKernel.Primitives;
+namespace WorkflowAutomation.Shared.Kernel.Primitives;
 
 public interface IEntity<TId>
     where TId : notnull

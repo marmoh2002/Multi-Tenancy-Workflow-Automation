@@ -1,4 +1,4 @@
-namespace WorkflowAutomation.SharedKernel.Primitives;
+namespace WorkflowAutomation.Shared.Kernel.Primitives;
 
 public record Error(string Code, string Description, ErrorType Type = ErrorType.Failure){
     

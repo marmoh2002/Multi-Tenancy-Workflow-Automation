@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace WorkflowAutomation.SharedKernel.Primitives;
+namespace WorkflowAutomation.Shared.Kernel.Primitives;
 
 public class Result
 {
