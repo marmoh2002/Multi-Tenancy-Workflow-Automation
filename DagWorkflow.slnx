@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="DagWorkflow.Core.Tests/DagWorkflow.Core.Tests.csproj" />
-  <Project Path="DagWorkflow.Core/DagWorkflow.Core.csproj" />
-</Solution>
