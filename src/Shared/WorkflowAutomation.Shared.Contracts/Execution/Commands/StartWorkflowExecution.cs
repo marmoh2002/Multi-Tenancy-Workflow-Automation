@@ -1,5 +1,8 @@
 namespace WorkflowAutomation.Shared.Contracts.Execution.Commands;
 
+using WorkflowAutomation.Shared.Contracts.Execution;
+
+
 public record StartWorkflowExecution(
     Guid ExecutionId,
     Guid WorkspaceId,
