@@ -5,6 +5,7 @@
     <Project Path="src/Modules/Workflows/WorkflowAutomation.Workflows.Core/WorkflowAutomation.Workflows.Core.csproj" />
   </Folder>
   <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/WorkflowAutomation.Shared.Contracts/WorkflowAutomation.Shared.Contracts.csproj" />
     <Project Path="src/Shared/WorkflowAutomation.SharedKernel/WorkflowAutomation.SharedKernel.csproj" />
   </Folder>
   <Folder Name="/tests/">
