@@ -4,7 +4,7 @@ using WorkflowAutomation.Shared.Kernel.Primitives;
 using WorkflowAutomation.Workspaces.Core.Enums;
 public sealed class WorkspaceMembership : AuditableEntity<Guid>
 {
-    public Guid WorkspaceId { get; private set; }
+    public readonly Guid WorkspaceId { get; private set; }
     public Guid UserId { get; private set; }
     public WorkspaceRole Role { get; private set; }
     public bool IsActive { get; private set; }
@@ -21,7 +21,7 @@ public sealed class WorkspaceMembership : AuditableEntity<Guid>
         IsActive = true;
     }
     public static WorkspaceMembership Create(Guid workspaceId, Guid userId, WorkspaceRole role) => Create(Guid.NewGuid(), workspaceId, userId, role);
-    //overload to supply GUID
+    // overload to supply GUID
     public static WorkspaceMembership Create(Guid id, Guid workspaceId, Guid userId, WorkspaceRole role)
     {
         if (id == Guid.Empty)

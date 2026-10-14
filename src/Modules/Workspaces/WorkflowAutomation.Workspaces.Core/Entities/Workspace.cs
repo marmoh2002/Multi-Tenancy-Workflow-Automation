@@ -5,6 +5,11 @@ using WorkflowAutomation.Workspaces.Core.Enums;
 
 public class Workspace : AuditableEntity<Guid>
 {
+    public string Name { get; private set; } = string.Empty;
+    public string? Description { get; private set; } = string.Empty;
+    public WorkspaceType Type { get; private set; }
+    public WorkspaceStatus Status { get; private set; }
+    public Guid CreatedByUserId { get; private set; }
     // Required by EF Core
     private Workspace()
     {
@@ -24,11 +29,6 @@ public class Workspace : AuditableEntity<Guid>
         CreatedByUserId = createdByUserId;
         Status = WorkspaceStatus.Active;
     }
-    public string Name { get; private set; } = string.Empty;
-    public string? Description { get; private set; } = string.Empty;
-    public WorkspaceType Type { get; private set; }
-    public WorkspaceStatus Status { get; private set; }
-    public Guid CreatedByUserId { get; private set; }
 
     public static Workspace CreatePersonal(Guid id, Guid createdByUserId, string name)
     {
