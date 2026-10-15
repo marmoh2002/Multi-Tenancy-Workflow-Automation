@@ -4,7 +4,7 @@ namespace WorkflowAutomation.Workspaces.Core.Entities;
 using WorkflowAutomation.Shared.Kernel.Primitives;
 
 
-public class WorkspaceConnection : AuditableEntity<Guid>
+public class WorkspaceConnection : AuditableEntity<Guid>, IMustHaveWorkspace
 {
   public Guid WorkspaceId { get; private set; }
   public string Name { get; private set; } = string.Empty;
