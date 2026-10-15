@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/WorkflowAutomation.Identity.Core/WorkflowAutomation.Identity.Core.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Workflows/">
+    <Project Path="src/Modules/Workflows/WorkflowAutomation.Workflows.Core/WorkflowAutomation.Workflows.Core.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Workspaces/">
+    <Project Path="src/Modules/Workspaces/WorkflowAutomation.Workspaces.Core/WorkflowAutomation.Workspaces.Core.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/WorkflowAutomation.Shared.Contracts/WorkflowAutomation.Shared.Contracts.csproj" />
+    <Project Path="src/Shared/WorkflowAutomation.Shared.Kernel/WorkflowAutomation.Shared.Kernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/WorkflowAutomation.Workflows.Core.Tests/WorkflowAutomation.Workflows.Core.Tests.csproj" />
+  </Folder>
+</Solution>
