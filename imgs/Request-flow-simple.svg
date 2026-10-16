@@ -1,0 +1,306 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 820" width="100%" height="100%">
+  <defs>
+    <!-- Subtle Dot Grid Pattern (ByteByteGo style) -->
+    <pattern id="bg-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="1.1" fill="#CBD5E1" opacity="0.65"/>
+    </pattern>
+
+    <!-- Soft Card Shadow -->
+    <filter id="card-shadow" x="-8%" y="-8%" width="116%" height="124%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.06"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#0F172A" flood-opacity="0.04"/>
+    </filter>
+
+    <filter id="pill-shadow" x="-6%" y="-10%" width="112%" height="128%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.05"/>
+    </filter>
+
+    <!-- Glow for animated packets -->
+    <filter id="glow-blue" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Motion Paths for Animated Packets -->
+    <path id="motion-client-jwt" d="M 300 98 L 300 186"/>
+    <path id="motion-jwt-ws" d="M 300 256 L 300 344"/>
+    <path id="motion-ws-invalid" d="M 570 475 L 646 475"/>
+    <path id="motion-ws-context" d="M 300 546 L 300 620"/>
+    <path id="motion-context-db" d="M 300 676 L 300 712"/>
+  </defs>
+
+  <style>
+    .font-sans {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .font-mono {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    }
+
+    /* Animated Marching Ants Flow Lines */
+    .flow-line {
+      stroke-dasharray: 6 5;
+      animation: march 0.9s linear infinite;
+    }
+    .flow-line-slow {
+      stroke-dasharray: 6 5;
+      animation: march 1.2s linear infinite;
+    }
+
+    @keyframes march {
+      to {
+        stroke-dashoffset: -11;
+      }
+    }
+
+    /* Subtle Pulse for Status Badges */
+    .pulse-ring-red {
+      animation: pulseRed 2.6s ease-in-out infinite;
+    }
+    @keyframes pulseRed {
+      0%, 100% { opacity: 0.14; }
+      50% { opacity: 0.32; }
+    }
+
+    .pulse-ring-green {
+      animation: pulseGreen 2.6s ease-in-out infinite;
+    }
+    @keyframes pulseGreen {
+      0%, 100% { opacity: 0.12; }
+      50% { opacity: 0.28; }
+    }
+  </style>
+
+  <!-- Canvas Background -->
+  <rect x="4" y="4" width="912" height="812" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.5"/>
+  <rect x="4" y="4" width="912" height="812" rx="16" fill="url(#bg-grid)"/>
+
+  <!-- Top Header Banner / Legend -->
+  <g class="font-sans" transform="translate(28, 22)">
+    <rect x="0" y="0" width="18" height="18" rx="4" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="3.5" fill="#3B82F6"/>
+    <text x="26" y="13.5" font-size="11.5" font-weight="700" fill="#475569" letter-spacing="0.06em">MULTI-TENANT WORKSPACE AUTHENTICATION &amp; ISOLATION PIPELINE</text>
+  </g>
+
+  <!-- ========================================================= -->
+  <!-- 1. [Client] NODE                                          -->
+  <!-- ========================================================= -->
+  <g transform="translate(190, 44)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="220" height="54" rx="12" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2"/>
+    <rect x="12" y="11" width="32" height="32" rx="8" fill="#EFF6FF"/>
+    <!-- Laptop / Client Icon -->
+    <rect x="19" y="18" width="18" height="12" rx="2" fill="none" stroke="#2563EB" stroke-width="1.8"/>
+    <path d="M 16 32 L 40 32" stroke="#2563EB" stroke-width="1.8" stroke-linecap="round"/>
+    <text x="58" y="32" class="font-sans" font-size="16" font-weight="700" fill="#0F172A">Client</text>
+    <rect x="154" y="17" width="52" height="20" rx="10" fill="#EFF6FF"/>
+    <text x="180" y="30.5" text-anchor="middle" class="font-mono" font-size="10.5" font-weight="600" fill="#2563EB">HTTP</text>
+  </g>
+
+  <!-- ========================================================= -->
+  <!-- CONNECTOR 1: Client -> JwtBearerMiddleware                -->
+  <!-- ========================================================= -->
+  <line x1="300" y1="98" x2="300" y2="184" stroke="#DBEAFE" stroke-width="3"/>
+  <line x1="300" y1="98" x2="300" y2="184" stroke="#3B82F6" stroke-width="2.2" class="flow-line"/>
+  <polygon points="300,192 294.5,182 305.5,182" fill="#3B82F6"/>
+  <circle r="4" fill="#2563EB" filter="url(#glow-blue)">
+    <animateMotion dur="1.8s" repeatCount="indefinite" rotate="auto">
+      <mpath href="#motion-client-jwt"/>
+    </animateMotion>
+  </circle>
+
+  <!-- Connector 1 Label Callout -->
+  <g transform="translate(318, 118)" filter="url(#pill-shadow)">
+    <rect x="0" y="0" width="414" height="44" rx="9" fill="#FFFFFF" stroke="#BFDBFE" stroke-width="1.5"/>
+    <path d="M -8 22 L 0 22" stroke="#93C5FD" stroke-width="1.5" stroke-dasharray="2 2"/>
+    <circle cx="16" cy="22" r="4" fill="#3B82F6"/>
+    <text x="28" y="26.5" class="font-sans" font-size="12.5" font-weight="600" fill="#334155">Sends:</text>
+    <rect x="74" y="10" width="92" height="24" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+    <text x="120" y="26" text-anchor="middle" class="font-mono" font-size="11.5" font-weight="700" fill="#1D4ED8">Bearer JWT</text>
+    <text x="176" y="26.5" text-anchor="middle" class="font-sans" font-size="13" font-weight="700" fill="#64748B">+</text>
+    <rect x="186" y="10" width="216" height="24" rx="6" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1"/>
+    <text x="294" y="26" text-anchor="middle" class="font-mono" font-size="11.5" font-weight="700" fill="#0369A1">"X-Workspace-Id: &lt;guid&gt;"</text>
+  </g>
+
+  <!-- ========================================================= -->
+  <!-- 2. [JwtBearerMiddleware] NODE                             -->
+  <!-- ========================================================= -->
+  <g transform="translate(150, 194)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="300" height="62" rx="12" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
+    <rect x="14" y="15" width="32" height="32" rx="8" fill="#F5F3FF"/>
+    <!-- Shield / Key Icon -->
+    <path d="M 30 21 L 38 24.5 L 38 30.5 C 38 35.5 34.5 39 30 41 C 25.5 39 22 35.5 22 30.5 L 22 24.5 Z" fill="none" stroke="#7C3AED" stroke-width="1.8" stroke-linejoin="round"/>
+    <path d="M 27.5 31 L 29.5 33 L 33.5 28.5" fill="none" stroke="#7C3AED" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="58" y="29" class="font-mono" font-size="14.5" font-weight="700" fill="#0F172A">JwtBearerMiddleware</text>
+    <text x="58" y="47" class="font-sans" font-size="11.5" font-weight="500" fill="#64748B">Authentication Layer</text>
+  </g>
+
+  <!-- ========================================================= -->
+  <!-- CONNECTOR 2: JwtBearerMiddleware -> WorkspaceResolution   -->
+  <!-- ========================================================= -->
+  <line x1="300" y1="256" x2="300" y2="342" stroke="#EDE9FE" stroke-width="3"/>
+  <line x1="300" y1="256" x2="300" y2="342" stroke="#7C3AED" stroke-width="2.2" class="flow-line"/>
+  <polygon points="300,350 294.5,340 305.5,340" fill="#7C3AED"/>
+  <circle r="4" fill="#7C3AED" filter="url(#glow-blue)">
+    <animateMotion dur="1.8s" begin="0.45s" repeatCount="indefinite" rotate="auto">
+      <mpath href="#motion-jwt-ws"/>
+    </animateMotion>
+  </circle>
+
+  <!-- Connector 2 Label Callout -->
+  <g transform="translate(318, 278)" filter="url(#pill-shadow)">
+    <rect x="0" y="0" width="348" height="42" rx="9" fill="#FFFFFF" stroke="#DDD6FE" stroke-width="1.5"/>
+    <path d="M -8 21 L 0 21" stroke="#C4B5FD" stroke-width="1.5" stroke-dasharray="2 2"/>
+    <circle cx="16" cy="21" r="4" fill="#7C3AED"/>
+    <text x="28" y="25.5" class="font-sans" font-size="12.5" font-weight="600" fill="#334155">Validates token signature &amp; extracts</text>
+    <rect x="262" y="9" width="72" height="24" rx="6" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="1"/>
+    <text x="298" y="25" text-anchor="middle" class="font-mono" font-size="11.5" font-weight="700" fill="#6D28D9">UserId</text>
+  </g>
+
+  <!-- ========================================================= -->
+  <!-- 3. [WorkspaceResolutionMiddleware] NODE                   -->
+  <!-- ========================================================= -->
+  <g transform="translate(30, 352)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="540" height="194" rx="14" fill="#FFFFFF" stroke="#0284C7" stroke-width="2.2"/>
+    <path d="M 2 14 C 2 7.37 7.37 2 14 2 L 526 2 C 532.63 2 538 7.37 538 14 L 538 50 L 2 50 Z" fill="#F0F9FF"/>
+    <line x1="2" y1="50" x2="538" y2="50" stroke="#BAE6FD" stroke-width="1.5"/>
+
+    <!-- Middleware Icon -->
+    <rect x="16" y="11" width="30" height="30" rx="8" fill="#E0F2FE"/>
+    <path d="M 23 22 L 31 18 L 39 22 L 31 26 Z" fill="none" stroke="#0284C7" stroke-width="1.7" stroke-linejoin="round"/>
+    <path d="M 23 26.5 L 31 30.5 L 39 26.5" fill="none" stroke="#0284C7" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 23 31 L 31 35 L 39 31" fill="none" stroke="#0284C7" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <text x="56" y="31.5" class="font-mono" font-size="15" font-weight="700" fill="#0F172A">WorkspaceResolutionMiddleware</text>
+    <rect x="420" y="15" width="102" height="22" rx="11" fill="#E0F2FE"/>
+    <text x="471" y="30" text-anchor="middle" class="font-sans" font-size="11" font-weight="700" fill="#0369A1">Tenant Guard</text>
+
+    <!-- Step 1 -->
+    <g transform="translate(16, 62)">
+      <rect x="0" y="0" width="508" height="34" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2"/>
+      <circle cx="19" cy="17" r="10" fill="#0284C7"/>
+      <text x="19" y="21" text-anchor="middle" class="font-sans" font-size="11.5" font-weight="700" fill="#FFFFFF">1</text>
+      <text x="37" y="21.5" class="font-sans" font-size="12.5" font-weight="500" fill="#1E293B">Reads the</text>
+      <rect x="100" y="6" width="122" height="22" rx="5" fill="#E0F2FE"/>
+      <text x="161" y="21" text-anchor="middle" class="font-mono" font-size="11.5" font-weight="700" fill="#0369A1">"X-Workspace-Id"</text>
+      <text x="230" y="21.5" class="font-sans" font-size="12.5" font-weight="500" fill="#1E293B">header</text>
+    </g>
+
+    <!-- Step 2 -->
+    <g transform="translate(16, 104)">
+      <rect x="0" y="0" width="508" height="34" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2"/>
+      <circle cx="19" cy="17" r="10" fill="#0284C7"/>
+      <text x="19" y="21" text-anchor="middle" class="font-sans" font-size="11.5" font-weight="700" fill="#FFFFFF">2</text>
+      <text x="37" y="21.5" class="font-sans" font-size="12.5" font-weight="700" fill="#0F172A">Queries DB:</text>
+      <text x="114" y="21.5" class="font-sans" font-size="12.5" font-weight="500" fill="#1E293B">Does this workspace exist and is it active?</text>
+    </g>
+
+    <!-- Step 3 -->
+    <g transform="translate(16, 146)">
+      <rect x="0" y="0" width="508" height="34" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2"/>
+      <circle cx="19" cy="17" r="10" fill="#0284C7"/>
+      <text x="19" y="21" text-anchor="middle" class="font-sans" font-size="11.5" font-weight="700" fill="#FFFFFF">3</text>
+      <text x="37" y="21.5" class="font-sans" font-size="12.5" font-weight="700" fill="#0F172A">Queries DB:</text>
+      <text x="114" y="21.5" class="font-sans" font-size="12.5" font-weight="500" fill="#1E293B">Does this</text>
+      <rect x="173" y="6" width="54" height="22" rx="5" fill="#F5F3FF"/>
+      <text x="200" y="21" text-anchor="middle" class="font-mono" font-size="11.5" font-weight="700" fill="#6D28D9">UserId</text>
+      <text x="234" y="21.5" class="font-sans" font-size="12.5" font-weight="500" fill="#1E293B">have an active</text>
+      <rect x="323" y="6" width="142" height="22" rx="5" fill="#E0F2FE"/>
+      <text x="394" y="21" text-anchor="middle" class="font-mono" font-size="11" font-weight="700" fill="#0369A1">WorkspaceMembership</text>
+      <text x="471" y="21.5" class="font-sans" font-size="12.5" font-weight="500" fill="#1E293B">here?</text>
+    </g>
+  </g>
+
+  <!-- ========================================================= -->
+  <!-- BRANCH A: Invalid / Unauthorized -> 403 Forbidden         -->
+  <!-- ========================================================= -->
+  <line x1="570" y1="475" x2="644" y2="475" stroke="#FEE2E2" stroke-width="3"/>
+  <line x1="570" y1="475" x2="644" y2="475" stroke="#EF4444" stroke-width="2.2" class="flow-line-slow"/>
+  <polygon points="652,475 642,469.5 642,480.5" fill="#EF4444"/>
+  <circle r="3.8" fill="#EF4444">
+    <animateMotion dur="1.6s" begin="0.8s" repeatCount="indefinite" rotate="auto">
+      <mpath href="#motion-ws-invalid"/>
+    </animateMotion>
+  </circle>
+
+  <!-- Branch Label Pill above Red Line -->
+  <g transform="translate(576, 404)">
+    <rect x="0" y="0" width="156" height="24" rx="12" fill="#FEF2F2" stroke="#FECACA" stroke-width="1.2"/>
+    <circle cx="12" cy="12" r="5" fill="#EF4444"/>
+    <path d="M 10 10 L 14 14 M 14 10 L 10 14" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round"/>
+    <text x="23" y="16" class="font-sans" font-size="11" font-weight="700" fill="#B91C1C">Invalid / Unauthorized</text>
+  </g>
+
+  <!-- 403 Forbidden Card -->
+  <g transform="translate(654, 437)" filter="url(#card-shadow)">
+    <rect x="-4" y="-4" width="246" height="84" rx="15" fill="#EF4444" class="pulse-ring-red" opacity="0.18"/>
+    <rect x="0" y="0" width="238" height="76" rx="12" fill="#FFFBFB" stroke="#EF4444" stroke-width="2"/>
+    <rect x="14" y="16" width="34" height="34" rx="8" fill="#FEF2F2"/>
+    <!-- Lock / Forbidden Icon -->
+    <circle cx="31" cy="33" r="10" fill="none" stroke="#DC2626" stroke-width="2"/>
+    <line x1="24" y1="26" x2="38" y2="40" stroke="#DC2626" stroke-width="2"/>
+    <text x="58" y="31" class="font-sans" font-size="14" font-weight="700" fill="#991B1B">Returns 403 Forbidden</text>
+    <rect x="58" y="40" width="96" height="22" rx="6" fill="#FEE2E2"/>
+    <text x="106" y="55" text-anchor="middle" class="font-mono" font-size="11.5" font-weight="700" fill="#B91C1C">(Fail-Closed)</text>
+  </g>
+
+  <!-- ========================================================= -->
+  <!-- BRANCH B: Valid -> WorkspaceContext.SetContext(...)        -->
+  <!-- ========================================================= -->
+  <line x1="300" y1="546" x2="300" y2="618" stroke="#D1FAE5" stroke-width="3"/>
+  <line x1="300" y1="546" x2="300" y2="618" stroke="#10B981" stroke-width="2.2" class="flow-line"/>
+  <polygon points="300,626 294.5,616 305.5,616" fill="#10B981"/>
+  <circle r="4" fill="#059669">
+    <animateMotion dur="1.5s" begin="0.9s" repeatCount="indefinite" rotate="auto">
+      <mpath href="#motion-ws-context"/>
+    </animateMotion>
+  </circle>
+
+  <!-- Valid Badge Pill -->
+  <g transform="translate(216, 566)" filter="url(#pill-shadow)">
+    <rect x="0" y="0" width="68" height="26" rx="13" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1.5"/>
+    <circle cx="14" cy="13" r="6" fill="#10B981"/>
+    <path d="M 11.2 13 L 13.2 15 L 17 11" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="26" y="17.5" class="font-sans" font-size="12" font-weight="700" fill="#065F46">Valid</text>
+  </g>
+
+  <!-- Action Step: Calls WorkspaceContext.SetContext(workspaceId, userId) -->
+  <g transform="translate(65, 628)" filter="url(#pill-shadow)">
+    <rect x="0" y="0" width="470" height="48" rx="10" fill="#ECFDF5" stroke="#10B981" stroke-width="1.8"/>
+    <circle cx="22" cy="24" r="6" fill="#10B981" class="pulse-ring-green"/>
+    <circle cx="22" cy="24" r="3.5" fill="#059669"/>
+    <text x="38" y="28.5" class="font-sans" font-size="13" font-weight="600" fill="#064E3B">Calls</text>
+    <rect x="76" y="11" width="378" height="26" rx="6" fill="#D1FAE5"/>
+    <text x="265" y="28.5" text-anchor="middle" class="font-mono" font-size="12" font-weight="700" fill="#065F46">WorkspaceContext.SetContext(workspaceId, userId)</text>
+  </g>
+
+  <!-- Connector from SetContext -> ApplicationDbContext -->
+  <line x1="300" y1="676" x2="300" y2="710" stroke="#D1FAE5" stroke-width="3"/>
+  <line x1="300" y1="676" x2="300" y2="710" stroke="#10B981" stroke-width="2.2" class="flow-line"/>
+  <polygon points="300,718 294.5,708 305.5,708" fill="#10B981"/>
+  <circle r="3.8" fill="#059669">
+    <animateMotion dur="1.1s" begin="1.3s" repeatCount="indefinite" rotate="auto">
+      <mpath href="#motion-context-db"/>
+    </animateMotion>
+  </circle>
+
+  <!-- ========================================================= -->
+  <!-- 4. [ApplicationDbContext & Endpoints] NODE                -->
+  <!-- ========================================================= -->
+  <g transform="translate(30, 720)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="540" height="78" rx="14" fill="#FFFFFF" stroke="#059669" stroke-width="2.2"/>
+    <rect x="16" y="15" width="44" height="48" rx="10" fill="#ECFDF5"/>
+    <!-- Database Cylinder Icon -->
+    <ellipse cx="38" cy="27" rx="11" ry="4.5" fill="none" stroke="#059669" stroke-width="1.8"/>
+    <path d="M 27 27 L 27 41 C 27 43.5 31.9 45.5 38 45.5 C 44.1 45.5 49 43.5 49 41 L 49 27" fill="none" stroke="#059669" stroke-width="1.8"/>
+    <path d="M 27 34 C 27 36.5 31.9 38.5 38 38.5 C 44.1 38.5 49 36.5 49 34" fill="none" stroke="#059669" stroke-width="1.8"/>
+
+    <text x="74" y="33" class="font-mono" font-size="15.5" font-weight="700" fill="#0F172A">ApplicationDbContext &amp; Endpoints</text>
+    <text x="74" y="56" class="font-sans" font-size="12.2" font-weight="500" fill="#334155">(Global Query Filters automatically restrict all SQL to this</text>
+    <rect x="406" y="40" width="96" height="22" rx="5" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+    <text x="454" y="55" text-anchor="middle" class="font-mono" font-size="11.5" font-weight="700" fill="#047857">WorkspaceId</text>
+    <text x="506" y="56" class="font-sans" font-size="12.2" font-weight="600" fill="#334155">)</text>
+  </g>
+</svg>

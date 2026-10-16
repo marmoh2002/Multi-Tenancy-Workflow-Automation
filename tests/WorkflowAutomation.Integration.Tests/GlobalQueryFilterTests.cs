@@ -68,6 +68,65 @@ public class GlobalQueryFilterTests : IDisposable
         Assert.Empty(memberships);
         Assert.Empty(connections);
     }
+
+    [Fact]
+    public async Task GivenActiveWorkspace_WhenQueryingEntities_ReturnsOnlyActiveWorkspaceRecords()
+    {
+        // Arrange: Seed two distinct workspaces (A and B) with their own users, memberships, and connections
+        var workspaceAId = Guid.NewGuid();
+        var userAId = Guid.NewGuid();
+
+        var workspaceBId = Guid.NewGuid();
+        var userBId = Guid.NewGuid();
+
+        // Seed using an unconstrained context or direct inserts
+        var seedContext = new WorkspaceContext();
+        seedContext.SetContext(workspaceAId, userAId);
+
+        using (var db = new ApplicationDbContext(_options, seedContext))
+        {
+            var userA = new ApplicationUser { Id = userAId, UserName = "alice", Email = "alice@a.com" };
+            var userB = new ApplicationUser { Id = userBId, UserName = "bob", Email = "bob@b.com" };
+
+            var workspaceA = Workspace.CreatePersonal(workspaceAId, userAId, "Workspace A");
+            var membershipA = WorkspaceMembership.Create(workspaceAId, userAId, WorkspaceRole.Owner);
+            var connectionA = WorkspaceConnection.Create(workspaceAId, "Slack A", "Slack", "enc_token_a", userAId);
+
+            var workspaceB = Workspace.CreatePersonal(workspaceBId, userBId, "Workspace B");
+            var membershipB = WorkspaceMembership.Create(workspaceBId, userBId, WorkspaceRole.Owner);
+            var connectionB = WorkspaceConnection.Create(workspaceBId, "GitHub B", "GitHub", "enc_token_b", userBId);
+
+            db.Users.AddRange(userA, userB);
+            db.Workspaces.AddRange(workspaceA, workspaceB);
+            db.WorkspaceMemberships.AddRange(membershipA, membershipB);
+            db.WorkspaceConnections.AddRange(connectionA, connectionB);
+            await db.SaveChangesAsync();
+        }
+
+        // Act: Execute queries as Workspace A
+        var contextA = new WorkspaceContext();
+        contextA.SetContext(workspaceAId, userAId);
+
+        using var queryDb = new ApplicationDbContext(_options, contextA);
+
+        var workspaces = await queryDb.Workspaces.ToListAsync();
+        var memberships = await queryDb.WorkspaceMemberships.ToListAsync();
+        var connections = await queryDb.WorkspaceConnections.ToListAsync();
+
+        // Assert: Workspace A sees its own records, and ZERO records belonging to Workspace B
+        var foundWorkspace = Assert.Single(workspaces);
+        Assert.Equal(workspaceAId, foundWorkspace.Id);
+        Assert.Equal("Workspace A", foundWorkspace.Name);
+
+        var foundMembership = Assert.Single(memberships);
+        Assert.Equal(workspaceAId, foundMembership.WorkspaceId);
+        Assert.Equal(userAId, foundMembership.UserId);
+
+        var foundConnection = Assert.Single(connections);
+        Assert.Equal(workspaceAId, foundConnection.WorkspaceId);
+        Assert.Equal("Slack A", foundConnection.Name);
+    }
+
     public void Dispose()
     {
         _connection.Dispose();

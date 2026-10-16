@@ -90,6 +90,12 @@ The platform is a **modular monolith** with three separate runtime hosts sharing
 
 The platform follows a **modular monolith** layout with clear module and host boundaries. Phase 1 migration from `DagWorkflow` to `WorkflowAutomation` is complete.
 
+---
+## Request Flow Overview
+
+![Diagram](./imgs/Request-flow-simple.svg)
+
+---
 ### Current State
 
 ```
