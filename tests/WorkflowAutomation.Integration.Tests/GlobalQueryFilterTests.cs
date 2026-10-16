@@ -126,6 +126,71 @@ public class GlobalQueryFilterTests : IDisposable
         Assert.Equal(workspaceAId, foundConnection.WorkspaceId);
         Assert.Equal("Slack A", foundConnection.Name);
     }
+    [Fact]
+    public async Task GivenNoActiveWorkspace_WhenUsingIgnoreQueryFilters_UserCanOnlyRetrieveOwnActiveMemberships()
+    {
+        // Arrange: Seed Alice with 2 active workspaces and 1 deactivated workspace, and Bob with 1 workspace
+        var aliceId = Guid.NewGuid();
+        var bobId = Guid.NewGuid();
+
+        var wsAlice1Id = Guid.NewGuid();
+        var wsAlice2Id = Guid.NewGuid();
+        var wsAliceInactiveId = Guid.NewGuid();
+        var wsBobId = Guid.NewGuid();
+
+        var seedContext = new WorkspaceContext();
+        seedContext.SetContext(wsAlice1Id, aliceId);
+
+        using (var db = new ApplicationDbContext(_options, seedContext))
+        {
+            var alice = new ApplicationUser { Id = aliceId, UserName = "alice", Email = "alice@test.com" };
+            var bob = new ApplicationUser { Id = bobId, UserName = "bob", Email = "bob@test.com" };
+
+            var ws1 = Workspace.CreatePersonal(wsAlice1Id, aliceId, "Alice WS 1");
+            var ws2 = Workspace.CreatePersonal(wsAlice2Id, aliceId, "Alice WS 2");
+            var wsInactive = Workspace.CreatePersonal(wsAliceInactiveId, aliceId, "Alice Inactive WS");
+            var wsBob = Workspace.CreatePersonal(wsBobId, bobId, "Bob WS");
+
+            var mem1 = WorkspaceMembership.Create(wsAlice1Id, aliceId, WorkspaceRole.Owner);
+            var mem2 = WorkspaceMembership.Create(wsAlice2Id, aliceId, WorkspaceRole.Member);
+            var memInactive = WorkspaceMembership.Create(wsAliceInactiveId, aliceId, WorkspaceRole.Viewer);
+            memInactive.Deactivate(); // Alice was removed from this workspace
+
+            var memBob = WorkspaceMembership.Create(wsBobId, bobId, WorkspaceRole.Owner);
+
+            db.Users.AddRange(alice, bob);
+            db.Workspaces.AddRange(ws1, ws2, wsInactive, wsBob);
+            db.WorkspaceMemberships.AddRange(mem1, mem2, memInactive, memBob);
+            await db.SaveChangesAsync();
+        }
+
+        // Act & Assert 1: Ordinary query without workspace context returns 0 (fail-closed verified)
+        var unauthenticatedContext = new WorkspaceContext(); // CurrentWorkspaceId is null
+        using var queryDb = new ApplicationDbContext(_options, unauthenticatedContext);
+
+        var ordinaryMemberships = await queryDb.WorkspaceMemberships
+            .Where(m => m.UserId == aliceId)
+            .ToListAsync();
+
+        Assert.Empty(ordinaryMemberships);
+
+        // Act & Assert 2: Controlled Bootstrap Query with IgnoreQueryFilters()
+        // Must explicitly restrict by trusted UserId and IsActive == true
+        var bootstrapMemberships = await queryDb.WorkspaceMemberships
+            .IgnoreQueryFilters()
+            .Where(m => m.UserId == aliceId && m.IsActive)
+            .ToListAsync();
+
+        // Alice sees exactly her 2 active workspaces
+        Assert.Equal(2, bootstrapMemberships.Count);
+        Assert.All(bootstrapMemberships, m => Assert.Equal(aliceId, m.UserId));
+        Assert.Contains(bootstrapMemberships, m => m.WorkspaceId == wsAlice1Id);
+        Assert.Contains(bootstrapMemberships, m => m.WorkspaceId == wsAlice2Id);
+
+        // Verify Bob's workspace and the inactive workspace are completely excluded
+        Assert.DoesNotContain(bootstrapMemberships, m => m.WorkspaceId == wsBobId);
+        Assert.DoesNotContain(bootstrapMemberships, m => m.WorkspaceId == wsAliceInactiveId);
+    }
 
     public void Dispose()
     {
