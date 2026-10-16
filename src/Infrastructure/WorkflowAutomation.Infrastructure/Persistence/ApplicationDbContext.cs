@@ -1,18 +1,18 @@
 namespace WorkflowAutomation.Infrastructure.Persistence;
 
+using System.Reflection;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using WorkflowAutomation.Identity.Core.Entities;
 using WorkflowAutomation.Shared.Kernel.Context;
+using WorkflowAutomation.Shared.Kernel.Primitives;
 using WorkflowAutomation.Workspaces.Core.Entities;
 
 public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
 {
     private readonly IWorkspaceContext _workspaceContext;
-
-    public ApplicationDbContext(
-        DbContextOptions<ApplicationDbContext> options,
-        IWorkspaceContext workspaceContext)
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IWorkspaceContext workspaceContext)
         : base(options)
     {
         _workspaceContext = workspaceContext;
@@ -22,19 +22,48 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<WorkspaceMembership> WorkspaceMemberships => Set<WorkspaceMembership>();
     public DbSet<WorkspaceConnection> WorkspaceConnections => Set<WorkspaceConnection>();
 
-    // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    // {
-    //     base.OnConfiguring(optionsBuilder);
+    private static readonly MethodInfo ConfigureWorkspaceFilterMethod =
+    typeof(ApplicationDbContext).GetMethod(
+        nameof(ConfigureWorkspaceFilter),
+        BindingFlags.NonPublic | BindingFlags.Instance)!;
 
-    //     // 1. Log only executed SQL commands to the Console at Information level
-    //     optionsBuilder.LogTo(
-    //         Console.WriteLine,
-    //         new[] { DbLoggerCategory.Database.Command.Name },
-    //         LogLevel.Information);
+    private void ApplyWorkspaceFilters(ModelBuilder modelBuilder)
+    {
+        var entityTypes = modelBuilder.Model.GetEntityTypes()
+            .Where(t =>
+                typeof(IMustHaveWorkspace).IsAssignableFrom(t.ClrType)
+                && t.BaseType is null)
+            .ToList();
 
-    //     // 2. Include parameter values in the logs (helpful to inspect query filter parameters)
-    //     optionsBuilder.EnableSensitiveDataLogging();
-    // }
+        foreach (var entityType in entityTypes)
+        {
+            ConfigureWorkspaceFilterMethod
+                .MakeGenericMethod(entityType.ClrType)
+                .Invoke(this, [modelBuilder]);
+        }
+    }
+
+    private void ConfigureWorkspaceFilter<TEntity>(
+        ModelBuilder modelBuilder)
+        where TEntity : class, IMustHaveWorkspace
+    {
+        modelBuilder.Entity<TEntity>()
+            .HasQueryFilter(
+                e => e.WorkspaceId == _workspaceContext.CurrentWorkspaceId);
+    }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+
+        // 1. Log only executed SQL commands to the Console at Information level
+        optionsBuilder.LogTo(
+            Console.WriteLine,
+            new[] { DbLoggerCategory.Database.Command.Name },
+            LogLevel.Information);
+
+        // 2. Include parameter values in the logs (helpful to inspect query filter parameters)
+        optionsBuilder.EnableSensitiveDataLogging();
+    }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -43,16 +72,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
         // 2. Automatically applies all IEntityTypeConfiguration classes from this assembly
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
-        // 3. Global Query Filters
+        // 2. Global Query Filters
 
-        // builder.ApplyGlobalFilters<IMustHaveWorkspace>(e => e.WorkspaceId == (_workspaceContext.CurrentWorkspaceId ?? Guid.Empty));
         builder.Entity<Workspace>()
             .HasQueryFilter(w => w.Id == _workspaceContext.CurrentWorkspaceId);
 
-        builder.Entity<WorkspaceMembership>()
-            .HasQueryFilter(m => m.WorkspaceId == _workspaceContext.CurrentWorkspaceId);
 
-        builder.Entity<WorkspaceConnection>()
-            .HasQueryFilter(c => c.WorkspaceId == _workspaceContext.CurrentWorkspaceId);
+        // Automatically apply workspace isolation filter to all IMustHaveWorkspace entities
+        ApplyWorkspaceFilters(builder); // our extension method
+
     }
 }
