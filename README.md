@@ -154,13 +154,118 @@ tests/
 └── WorkflowAutomation.Integration.Tests/
 ```
 
+### Dependency Graph & Module Flow
+---
+![Diagram](./imgs/Dependency_Graph.svg)
+
+```mermaid
+graph TD
+    subgraph Hosts
+        API[WorkflowAutomation.Api]
+        WRK[WorkflowAutomation.Worker]
+        SCH[WorkflowAutomation.Scheduler]
+    end
+
+    subgraph Infrastructure Layer
+        INFRA["WorkflowAutomation.Infrastructure<br/>(ApplicationDbContext : IdentityDbContext)"]
+    end
+
+    subgraph Identity Module
+        IC["Identity.Core<br/>(ApplicationUser, ApplicationRole)"]
+        IA[Identity.Application]
+        II[Identity.Infrastructure]
+    end
+
+    subgraph Workspaces Module
+        WSC["Workspaces.Core<br/>(Workspace, WorkspaceMembership, WorkspaceConnection)"]
+        WSA[Workspaces.Application]
+        WSI[Workspaces.Infrastructure]
+    end
+
+    subgraph Workflows Module
+        WC[Workflows.Core]
+        WA[Workflows.Application]
+        WI[Workflows.Infrastructure]
+    end
+
+    subgraph Shared
+        SK[SharedKernel]
+        SC[Shared.Contracts]
+    end
+
+    %% API composition root
+    API --> IA
+    API --> II
+    API --> WSA
+    API --> WSI
+    API --> WA
+    API --> WI
+    API --> INFRA
+    API --> SC
+
+    %% Worker composition root
+    WRK --> WA
+    WRK --> WSA
+    WRK --> WI
+    WRK --> INFRA
+    WRK --> SC
+
+    %% Scheduler composition root
+    SCH --> WA
+    SCH --> WSA
+    SCH --> INFRA
+    SCH --> SC
+
+    %% Identity module
+    II --> IA
+    II --> IC
+    II --> INFRA
+    IA --> IC
+    IA --> SK
+    IC --> SK
+
+    %% Workspaces module
+    WSI --> WSA
+    WSI --> WSC
+    WSI --> INFRA
+    WSA --> WSC
+    WSA --> SK
+    WSC --> SK
+
+    %% Workflows module
+    WI --> WA
+    WI --> WC
+    WI --> INFRA
+    WA --> WC
+    WA --> SK
+    WA --> SC
+    WC --> SK
+
+    %% Shared infrastructure maps entities from multiple modules
+    INFRA --> SK
+    INFRA --> IC
+    INFRA --> WSC
+    INFRA --> WC
+
+    %% Shared contracts
+    SC --> SK
+```
+
 ### Key Dependency Rules
 
-- **Shared.Kernel**: Zero external NuGet dependencies. Pure .NET 10.
-- **Shared.Contracts**: Pure C# records. No MassTransit, EF Core, or ASP.NET references.
-- **Identity.Core → Shared.Kernel**: Only NuGet dependency is `Microsoft.Extensions.Identity.Stores` (lightweight, no EF Core).
-- **Infrastructure → Identity.Core**: `ApplicationDbContext` inherits `IdentityDbContext<ApplicationUser>` — requires entity types, not framework services.
-- **Cross-module references**: Use raw `Guid` foreign keys only; never Entity Framework navigation properties between modules.
+- **Shared.Kernel (`WorkflowAutomation.Shared.Kernel`)**: Zero external NuGet dependencies. Pure .NET 10. The foundation that all Core and Application projects depend on.
+- **Shared.Contracts (`WorkflowAutomation.Shared.Contracts`)**: Pure C# message records (commands and events). References only `Shared.Kernel`. Zero third-party dependencies (no MassTransit, EF Core, or ASP.NET Core).
+- **Module Cores (`*.Core`)**: All module domain cores (`Identity.Core`, `Workspaces.Core`, `Workflows.Core`) depend strictly on `Shared.Kernel`. `Identity.Core` has a single lightweight NuGet dependency on `Microsoft.Extensions.Identity.Stores` (no EF Core).
+- **Infrastructure Layer (`WorkflowAutomation.Infrastructure`)**: Hosts the unified `ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>`. References `Shared.Kernel`, `Identity.Core`, `Workspaces.Core`, and `Workflows.Core` to map entity configurations across all modules without coupling to application or business logic.
+- **Module Application & Infrastructure Layers**:
+  - `*.Application` depends on its respective `*.Core` and `Shared.Kernel` (`Workflows.Application` also references `Shared.Contracts`).
+  - `*.Infrastructure` depends on its respective `*.Application`, `*.Core`, and `WorkflowAutomation.Infrastructure`.
+- **Host Composition Roots**:
+  - `WorkflowAutomation.Api`: References all module `Application` and `Infrastructure` layers (`IA`, `II`, `WSA`, `WSI`, `WA`, `WI`), `WorkflowAutomation.Infrastructure`, and `Shared.Contracts`.
+  - `WorkflowAutomation.Worker`: References `Workflows.Application`, `Workspaces.Application`, `Workflows.Infrastructure`, `WorkflowAutomation.Infrastructure`, and `Shared.Contracts`.
+  - `WorkflowAutomation.Scheduler`: References `Workflows.Application`, `Workspaces.Application`, `WorkflowAutomation.Infrastructure`, and `Shared.Contracts`.
+- **Cross-module decoupling**: Cross-module entity references use raw `Guid` foreign keys only; never Entity Framework navigation properties between modules.
+- **Strictly Acyclic Flow**: Every dependency path flows inward and terminates at `Shared.Kernel`. No circular references exist across modules or layers.
 
 ---
 
@@ -276,10 +381,4 @@ All 8 DAG validation unit tests should pass.
 | **8** | **API Endpoints & JWT Security** | ⚪ Planned | ASP.NET Core API host. JWT bearer auth. Workspace middleware. Workflow and execution endpoints. |
 | **9** | **Integration Testing** | ⚪ Planned | Testcontainers (PostgreSQL + RabbitMQ). Concurrency, fail-fast, crash recovery, conditional UPDATE guards, Consumer Outbox atomicity, and workspace isolation tests. |
 | **10** | **Compensation & Rollback (Future)** | ⚪ Planned | Compensating actions, `Compensating` saga state, compensation commands/events, reverse-dependency execution order, compensation retry policies. |
-
 ---
-
-## License
-
-*TBD*
-
