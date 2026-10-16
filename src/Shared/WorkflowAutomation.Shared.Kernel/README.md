@@ -75,6 +75,7 @@ ApplicationDbContext
 | Component | Type | Why It Is Needed |
 | :--- | :--- | :--- |
 | **`IWorkspaceContext`** | `Interface` | **Host-Agnostic Multi-Tenancy Scoping**: Exposes the workspace associated with the current operation (`CurrentWorkspaceId`, `CurrentUserId`, `HasCurrentWorkspace`) across any runtime host (API HTTP request, Worker message consumer, or Scheduler job) without tying consumers to `HttpContext` or a concrete domain entity. |
+| **`WorkspaceContext`** | `Class` | **Scoped Context Container**: Thread-safe scoped implementation holding `CurrentWorkspaceId` and `CurrentUserId`. Enforces a single-initialization invariant (`SetContext`) to prevent tampering or cross-contamination within an operation scope. |
 
 ---
 
@@ -146,11 +147,11 @@ Use EF Core global query filters as a default data-isolation mechanism, driven b
 
 <b>Problem It Solves</b>: Provides a generic compile-time marker for entities whose rows belong to a single workspace. This allows the EF Core infrastructure to automatically discover all workspace-scoped entities via reflection and configure global query filters without manually writing individual filter configurations for dozens of entity types.
 
-#### `IWorkspaceContext` (proposed)
+#### `IWorkspaceContext` & `WorkspaceContext`
 
-Exposes the workspace associated with the current operation, without tying consumers to an HTTP request or a concrete domain entity. The operation might be an API request, a RabbitMQ message consumer, or a scheduled job. The preferred initial design exposes IDs rather than a `WorkspaceMembership` object: membership represents a persisted relationship, while context represents the workspace in which an operation is running.
+Exposes the workspace associated with the current operation, without tying consumers to an HTTP request or a concrete domain entity. The operation might be an API request, a RabbitMQ message consumer, or a scheduled job. The implementation exposes IDs (`CurrentWorkspaceId`, `CurrentUserId`) rather than a `WorkspaceMembership` object: membership represents a persisted relationship, while context represents the workspace in which an operation is running.
 
-Whether `CurrentUserId` belongs in this interface remains a design decision. A background process may have an initiating user for auditing, but it is not necessarily executing as that user.
+`WorkspaceContext` serves as the scoped concrete container with a thread-safe `SetContext(workspaceId, userId)` guard to prevent tampering across scopes.
 
 ### Important Design Rules
 
@@ -169,12 +170,14 @@ Whether `CurrentUserId` belongs in this interface remains a design decision. A b
 4. **Let EF Core filters constrain ordinary queries** to that workspace.
 5. **For Worker/Scheduler operations**, derive context from validated job or message data and validate referenced workspace-owned records before processing.
 
-> *These abstractions and rules are the proposed design; confirm the context lifecycle, missing-context behavior, and membership-resolution strategy before implementing global query filters.*
+> [!NOTE]
+> These abstractions are implemented and verified via integration tests ([GlobalQueryFilterTests](file:///home/mariam/Documents/WorkflowAutomation/Multi-Tenancy-Workflow-Automation/tests/WorkflowAutomation.Integration.Tests/GlobalQueryFilterTests.cs) and [DependencyInjectionLifetimeTests](file:///home/mariam/Documents/WorkflowAutomation/Multi-Tenancy-Workflow-Automation/tests/WorkflowAutomation.Integration.Tests/DependencyInjectionLifetimeTests.cs)).
 
 ---
 
 <br>
 ### Workspace Lifecycle Across All Hosts
+
 ---
 
 ```
