@@ -22,25 +22,37 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<WorkspaceMembership> WorkspaceMemberships => Set<WorkspaceMembership>();
     public DbSet<WorkspaceConnection> WorkspaceConnections => Set<WorkspaceConnection>();
 
+    // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    // {
+    //     base.OnConfiguring(optionsBuilder);
+
+    //     // 1. Log only executed SQL commands to the Console at Information level
+    //     optionsBuilder.LogTo(
+    //         Console.WriteLine,
+    //         new[] { DbLoggerCategory.Database.Command.Name },
+    //         LogLevel.Information);
+
+    //     // 2. Include parameter values in the logs (helpful to inspect query filter parameters)
+    //     optionsBuilder.EnableSensitiveDataLogging();
+    // }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         // 1. Configures ASP.NET Core Identity tables (AspNetUsers, AspNetRoles, etc.)
         base.OnModelCreating(builder);
-
         // 2. Automatically applies all IEntityTypeConfiguration classes from this assembly
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
         // 3. Global Query Filters
 
         // builder.ApplyGlobalFilters<IMustHaveWorkspace>(e => e.WorkspaceId == (_workspaceContext.CurrentWorkspaceId ?? Guid.Empty));
-
         builder.Entity<Workspace>()
-            .HasQueryFilter(w => w.Id == (_workspaceContext.CurrentWorkspaceId ?? Guid.Empty));
+            .HasQueryFilter(w => w.Id == _workspaceContext.CurrentWorkspaceId);
 
         builder.Entity<WorkspaceMembership>()
-            .HasQueryFilter(m => m.WorkspaceId == (_workspaceContext.CurrentWorkspaceId ?? Guid.Empty));
+            .HasQueryFilter(m => m.WorkspaceId == _workspaceContext.CurrentWorkspaceId);
 
         builder.Entity<WorkspaceConnection>()
-            .HasQueryFilter(c => c.WorkspaceId == (_workspaceContext.CurrentWorkspaceId ?? Guid.Empty));
+            .HasQueryFilter(c => c.WorkspaceId == _workspaceContext.CurrentWorkspaceId);
     }
 }

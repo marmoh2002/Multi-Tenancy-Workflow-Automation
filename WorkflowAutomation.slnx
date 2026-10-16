@@ -18,6 +18,7 @@
     <Project Path="src/Shared/WorkflowAutomation.Shared.Kernel/WorkflowAutomation.Shared.Kernel.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/WorkflowAutomation.Integration.Tests/WorkflowAutomation.Integration.Tests.csproj" />
     <Project Path="tests/WorkflowAutomation.Workflows.Core.Tests/WorkflowAutomation.Workflows.Core.Tests.csproj" />
   </Folder>
 </Solution>

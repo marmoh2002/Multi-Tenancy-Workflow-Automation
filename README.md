@@ -99,6 +99,9 @@ WorkflowAutomation.slnx
 │   │   ├── WorkflowAutomation.Shared.Kernel/          # Primitives, Result<T>, Error, IClock, IWorkspaceContext, IMustHaveWorkspace (0 deps)
 │   │   └── WorkflowAutomation.Shared.Contracts/       # Pure C# message contracts (Execution.Commands, Execution.Events)
 │   │
+│   ├── Infrastructure/
+│   │   └── WorkflowAutomation.Infrastructure/         # ApplicationDbContext, Global Query Filters, DI registration
+│   │
 │   └── Modules/
 │       ├── Identity/
 │       │   └── WorkflowAutomation.Identity.Core/      # ApplicationUser : IdentityUser<Guid>, ApplicationRole
@@ -308,6 +311,21 @@ Pure C# message contracts under `Execution.Commands` (`StartExecution`, `Execute
 - Disconnected valid subgraphs and single-node graphs
 - Cyclic graphs, direct self-loops, and invalid/missing dependency references
 
+### 7. Persistence & Multi-Tenancy Infrastructure (`WorkflowAutomation.Infrastructure`)
+- **`ApplicationDbContext`**: Unified EF Core context inheriting `IdentityDbContext<ApplicationUser, ApplicationRole, Guid>`. Maps Identity, Workspaces, and Workflows schemas.
+- **Fail-Closed Global Query Filters**:
+  - `Workspace` aggregate root filtered by `w.Id == (_workspaceContext.CurrentWorkspaceId ?? Guid.Empty)` (primary key is `Id`, not `WorkspaceId`).
+  - Workspace-owned entities (`WorkspaceMembership`, `WorkspaceConnection`) implementing `IMustHaveWorkspace` filtered by `e.WorkspaceId == (_workspaceContext.CurrentWorkspaceId ?? Guid.Empty)`.
+  - Missing context defaults to `Guid.Empty` (which safely returns 0 rows as domain factory invariants reject `Guid.Empty` workspace IDs).
+
+> [!IMPORTANT]
+> **Tenant Isolation & Security Boundary Limits**:
+> 1. **Read-Side Protection**: EF Core Global Query Filters automatically scope all queries to the active `CurrentWorkspaceId` (or fail closed to `Guid.Empty`).
+> 2. **Write-Side Boundary**: Query filters do **not** inspect or protect write operations (`INSERT`, `UPDATE`, `DELETE`). A malicious or buggy caller could still try to insert a record with another tenant's `WorkspaceId`. Write-side isolation and cross-workspace reference checks must be strictly enforced in application services, aggregate invariants, and database foreign keys.
+
+- **Dependency Injection**:
+  - `AddInfrastructurePersistence(connectionString)` registers `WorkspaceContext` (Scoped), forwards `IWorkspaceContext` to the same instance within the scope, and registers `ApplicationDbContext` with Scoped, unpooled lifetime using Npgsql PostgreSQL provider.
+
 ---
 
 ## Getting Started
@@ -351,7 +369,7 @@ All 8 DAG validation unit tests should pass.
 
 | Area / Decision | Problem Encountered | Solution Proposed / Chosen | Architectural Rationale & Trade-offs |
 |:---|:---|:---|:---|
-| **Multi-Tenancy Query Isolation** | In a shared-database multi-tenant platform, relying on developers to write `.Where(x => x.WorkspaceId == ...)` on every query causes accidental cross-tenant data leaks. Root `Workspace` cannot have a foreign `WorkspaceId` filter. | Introduced `IMustHaveWorkspace` marker interface and `IWorkspaceContext`. In `ApplicationDbContext`, EF Core applies **Global Query Filters** automatically (`WHERE "WorkspaceId" = @CurrentWorkspaceId`) to all `IMustHaveWorkspace` entities. | Eliminates human error at query time. Root `Workspace` aggregate intentionally omits the marker interface to prevent self-filtering conflicts. |
+| **Multi-Tenancy Query Isolation** | In a shared-database multi-tenant platform, relying on developers to write `.Where(x => x.WorkspaceId == ...)` on every query causes accidental cross-tenant data leaks. Root `Workspace` cannot have a foreign `WorkspaceId` filter. | Introduced `IMustHaveWorkspace` marker interface and `IWorkspaceContext`. In `ApplicationDbContext`, EF Core applies **Global Query Filters** automatically (`WHERE "WorkspaceId" = @CurrentWorkspaceId`) to all `IMustHaveWorkspace` entities and matches `w.Id` for the `Workspace` root. | Eliminates human error on read queries. Root `Workspace` aggregate intentionally omits the marker interface to prevent self-filtering conflicts. *Note: Global query filters only protect reads; write operations require explicit validation in application services and domain models.* |
 | **Host-Agnostic Context Resolution** | Context (workspace and user identity) must be resolved across 3 distinct runtime hosts (API HTTP requests, Worker queue consumers, Scheduler cron jobs). Coupling context to `HttpContext` breaks non-web worker hosts. | Abstracted `IWorkspaceContext` in `Shared.Kernel`. Each host provides its own scoped implementation: API from JWT/header, Worker from message headers, Scheduler from job metadata. | Zero web dependencies in domain, persistence, or worker processes. Context is transparently available everywhere. |
 | **Zero-Dependency Shared Kernel** | Shared libraries frequently become bloated "junk drawers" coupling modules through heavy third-party packages (EF Core, MassTransit, MediatR). | Enforced strict rule: **0 NuGet package dependencies** in `WorkflowAutomation.Shared.Kernel` (pure .NET 10). | Modules depend only on pure domain contracts and primitives without transitive package lock-in or version conflicts. |
 | **Cross-Module Decoupling** | Entity Framework navigation properties across module boundaries (e.g., `WorkspaceMembership` referencing `ApplicationUser`) tightly couple database schemas and cause circular dependencies. | Cross-module relationships use raw `Guid` foreign keys only (e.g. `WorkspaceMembership.UserId` is a raw `Guid`). Cross-module interaction happens via contracts or application service interfaces. | Modules remain truly independent and can be refactored, split, or extracted into microservices without cascading schema breakage. |
