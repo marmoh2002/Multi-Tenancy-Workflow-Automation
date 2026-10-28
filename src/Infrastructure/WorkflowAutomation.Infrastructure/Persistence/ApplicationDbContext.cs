@@ -9,7 +9,7 @@ using WorkflowAutomation.Shared.Kernel.Context;
 using WorkflowAutomation.Shared.Kernel.Primitives;
 using WorkflowAutomation.Workspaces.Core.Entities;
 
-public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
+public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
 {
     private readonly IWorkspaceContext _workspaceContext;
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IWorkspaceContext workspaceContext)
@@ -22,35 +22,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<WorkspaceMembership> WorkspaceMemberships => Set<WorkspaceMembership>();
     public DbSet<WorkspaceConnection> WorkspaceConnections => Set<WorkspaceConnection>();
 
-    private static readonly MethodInfo ConfigureWorkspaceFilterMethod =
-    typeof(ApplicationDbContext).GetMethod(
-        nameof(ConfigureWorkspaceFilter),
-        BindingFlags.NonPublic | BindingFlags.Instance)!;
-
-    private void ApplyWorkspaceFilters(ModelBuilder modelBuilder)
-    {
-        var entityTypes = modelBuilder.Model.GetEntityTypes()
-            .Where(t =>
-                typeof(IMustHaveWorkspace).IsAssignableFrom(t.ClrType)
-                && t.BaseType is null)
-            .ToList();
-
-        foreach (var entityType in entityTypes)
-        {
-            ConfigureWorkspaceFilterMethod
-                .MakeGenericMethod(entityType.ClrType)
-                .Invoke(this, [modelBuilder]);
-        }
-    }
-
-    private void ConfigureWorkspaceFilter<TEntity>(
-        ModelBuilder modelBuilder)
-        where TEntity : class, IMustHaveWorkspace
-    {
-        modelBuilder.Entity<TEntity>()
-            .HasQueryFilter(
-                e => e.WorkspaceId == _workspaceContext.CurrentWorkspaceId);
-    }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         base.OnConfiguring(optionsBuilder);
