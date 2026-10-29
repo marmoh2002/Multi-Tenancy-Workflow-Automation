@@ -21,37 +21,7 @@ A .NET 10 modular monolith where workspaces create *DAG-based workflows* that ex
 
 The platform is a *modular monolith* with three separate runtime hosts sharing a single PostgreSQL database. Modules communicate through *message contracts* over RabbitMQ via MassTransit. Workspace isolation is enforced at every layer through EF Core global query filters and per-request workspace context resolution.
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                     Client Application                    │
-└────────────────────────┬─────────────────────────────────┘
-                         │ HTTP + JWT Bearer + X-Workspace-Id
-┌────────────────────────▼─────────────────────────────────┐
-│                    API Host (ASP.NET Core)                 │
-│   JWT Auth · Workspace Middleware · Bus Outbox             │
-├───────────┬────────────┬─────────────────────────────────┤
-│ Identity  │ Workspaces │  Workflows                       │
-│ Module    │ Module     │  Module                          │
-└─────┬─────┴─────┬──────┴──────┬──────────────────────────┘
-      │           │             │
-      ▼           ▼             ▼
-┌──────────────────────────────────────────────────────────┐
-│              RabbitMQ (via MassTransit)                    │
-│         Commands · Events · Transactional Outbox          │
-└────────────┬─────────────────────────┬───────────────────┘
-             │                         │
-┌────────────▼─────────┐  ┌────────────▼───────────────────┐
-│    Worker Host        │  │      Scheduler Host             │
-│  Saga State Machine   │  │  Quartz.NET Cron Jobs           │
-│  Step Executors       │  │  Occurrence → StartExecution    │
-│  Consumer Outbox      │  │  Bus Outbox                     │
-└────────────┬─────────┘  └────────────┬───────────────────┘
-             │                         │
-┌────────────▼─────────────────────────▼───────────────────┐
-│                   PostgreSQL 15                            │
-│    EF Core · Saga State · Outbox · Identity Tables        │
-└──────────────────────────────────────────────────────────┘
-```
+![Diagram](./imgs/architecture_diagram.svg)
 
 ### Three Hosts
 
