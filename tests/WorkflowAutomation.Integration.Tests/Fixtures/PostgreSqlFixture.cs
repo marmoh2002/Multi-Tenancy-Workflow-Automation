@@ -43,7 +43,7 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
         // 3. Create the schema in PostgreSQL using a temporary scope
         using var initScope = _rootProvider.CreateScope();
         var db = initScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await db.Database.EnsureCreatedAsync();
+        await db.Database.MigrateAsync();
     }
 
     /// <summary>
