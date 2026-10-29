@@ -10,7 +10,7 @@ using Xunit;
 
 /// <summary>
 /// Spawns a dedicated, disposable PostgreSQL Docker container for integration tests
-/// and initializes the EF Core schema via EnsureCreatedAsync.
+/// and initializes the EF Core schema via MigrateAsync.
 /// </summary>
 public sealed class PostgreSqlFixture : IAsyncLifetime
 {

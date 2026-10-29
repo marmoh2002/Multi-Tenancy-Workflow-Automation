@@ -17,7 +17,21 @@ Verifies SQL-level row filtering enforced by `ApplicationDbContext`:
   * Tests the workspace selection flow for authenticated users who have not yet established an active workspace context.
   * Verifies that bypassing global query filters using `.IgnoreQueryFilters()` is safe only when constrained by an explicit filter on the verified `UserId` (`Where(m => m.UserId == userId && m.IsActive)`). Other users' memberships and deactivated memberships remain excluded.
 
-### 2. Dependency Injection Lifetimes (`DependencyInjectionLifetimeTests.cs`)
+### 2. Tenant Write Validation (`TenantWriteValidationInterceptorTests.cs`)
+Verifies write-side isolation enforced by `TenantWriteValidationInterceptor`:
+
+* **Matching Workspace Context**:
+  * Entities whose `WorkspaceId` matches the active workspace are persisted.
+* **Cross-Workspace Writes**:
+  * Inserts, updates, and deletes targeting another workspace are rejected before they reach the database.
+* **Missing Workspace Context**:
+  * Workspace-scoped writes fail closed when no active workspace is set.
+* **Sync and Async Paths**:
+  * Both `SaveChanges` and `SaveChangesAsync` enforce the same validation.
+* **Scope Isolation**:
+  * Sequential scopes can operate on different workspaces without leaking context or interceptor state.
+
+### 3. Dependency Injection Lifetimes (`DependencyInjectionLifetimeTests.cs`)
 Verifies service registration and scoping configured by `AddInfrastructurePersistence`:
 
 * **Single-Instance Resolution per Scope (`Assert.Same`)**:
@@ -29,12 +43,14 @@ Verifies service registration and scoping configured by `AddInfrastructurePersis
 
 ## Database Strategy
 
-* **Provider**: SQLite In-Memory (`Microsoft.EntityFrameworkCore.Sqlite`).
-* **Rationale**:
-  * SQLite is a relational database engine that tests EF Core's actual SQL query translation and schema generation (`EnsureCreated()`).
-  * Executes in-process without network overhead or dependencies on external container runtimes.
-* **Connection Lifecycle**:
-  * In-memory SQLite databases persist only while the underlying connection remains open. The test fixture maintains an open `SqliteConnection("DataSource=:memory:")` in the constructor and disposes it on teardown.
+The suite uses two providers, each chosen for the behavior under test:
+
+* **SQLite In-Memory (`GlobalQueryFilterTests`)**:
+  * Tests EF Core global query filter translation and fail-closed behavior without external dependencies.
+  * The test class keeps a `SqliteConnection("DataSource=:memory:")` open for its lifetime and disposes it on teardown, since the in-memory database exists only while the connection remains open.
+* **PostgreSQL via Testcontainers (`TenantWriteValidationInterceptorTests`)**:
+  * Uses `PostgreSqlFixture` to start a disposable `postgres:15-alpine` container, build the production DI container, and apply the committed EF migrations through `MigrateAsync`.
+  * Exercises the Npgsql provider and the actual migration baseline rather than a model-generated schema.
 
 ---
 

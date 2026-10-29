@@ -3,7 +3,7 @@
 InitializeAsync()
     Start a temporary PostgreSQL container
     Register your application’s database services
-    Create the database tables
+    Apply the committed EF migrations
               ↓
 Tests use CreateScope()
     Obtain services such as ApplicationDbContext
@@ -16,6 +16,6 @@ DisposeAsync()
 ```
 
 ```
-await db.Database.EnsureCreatedAsync();
+await db.Database.MigrateAsync();
 ```
-This creates tables directly from your current EF model. It does not read your migration files. 
+This applies the committed migration files to the temporary database. The fixture previously used `EnsureCreatedAsync()`, which builds tables from the current EF model and ignores migration history.
