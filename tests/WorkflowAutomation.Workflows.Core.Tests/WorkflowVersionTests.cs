@@ -204,4 +204,115 @@ public class WorkflowVersionTests
         Assert.Contains($"Step {invalidDefinition.Steps[0].Id} depends on unknown step non-existent-step.", version.ValidationErrorsJson);
     }
 
+    [Fact]
+    public void Publish_succeeds_and_sets_published_and_updated_timestamps()
+    {
+        var version = WorkflowVersion.CreateDraft(
+            Guid.NewGuid(),
+            WorkspaceId,
+            WorkflowId,
+            versionNumber: 1,
+            CreateSampleDefinition("step-1"),
+            _validator,
+            _clock);
+
+        _clock.Advance(TimeSpan.FromHours(1));
+
+        version.Publish(_clock);
+
+        var expectedTimestamp = new DateTimeOffset(_clock.UtcNow);
+        Assert.True(version.IsPublished);
+        Assert.Equal(expectedTimestamp, version.PublishedAt);
+        Assert.Equal(expectedTimestamp, version.UpdatedAt);
+    }
+
+    [Fact]
+    public void Publish_rejects_already_published_version()
+    {
+        var version = WorkflowVersion.CreateDraft(
+            Guid.NewGuid(),
+            WorkspaceId,
+            WorkflowId,
+            versionNumber: 1,
+            CreateSampleDefinition("step-1"),
+            _validator,
+            _clock);
+
+        version.Publish(_clock);
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            version.Publish(_clock));
+
+        Assert.Contains("already published", exception.Message);
+    }
+
+    [Fact]
+    public void Publish_rejects_version_with_validation_errors()
+    {
+        var cyclicDefinition = new WorkflowDefinition
+        {
+            Steps =
+            [
+                new StepDefinition { Id = "a", Type = "Log", DependsOn = ["b"] },
+                new StepDefinition { Id = "b", Type = "Log", DependsOn = ["a"] }
+            ]
+        };
+
+        var version = WorkflowVersion.CreateDraft(
+            Guid.NewGuid(),
+            WorkspaceId,
+            WorkflowId,
+            versionNumber: 1,
+            cyclicDefinition,
+            _validator,
+            _clock);
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            version.Publish(_clock));
+
+        Assert.Contains("validation errors", exception.Message);
+        Assert.False(version.IsPublished);
+    }
+
+    [Fact]
+    public void Publish_rejects_empty_workflow_definition()
+    {
+        var emptyDefinition = new WorkflowDefinition
+        {
+            Steps = []
+        };
+
+        var version = WorkflowVersion.CreateDraft(
+            Guid.NewGuid(),
+            WorkspaceId,
+            WorkflowId,
+            versionNumber: 1,
+            emptyDefinition,
+            _validator,
+            _clock);
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            version.Publish(_clock));
+
+        Assert.Contains("empty workflow definition", exception.Message);
+        Assert.False(version.IsPublished);
+    }
+
+    [Fact]
+    public void Publish_rejects_null_clock()
+    {
+        var version = WorkflowVersion.CreateDraft(
+            Guid.NewGuid(),
+            WorkspaceId,
+            WorkflowId,
+            versionNumber: 1,
+            CreateSampleDefinition("step-1"),
+            _validator,
+            _clock);
+
+        Assert.Throws<ArgumentNullException>(() =>
+            version.Publish(null!));
+    }
+
+
 }

@@ -1,0 +1,1 @@
+namespace WorkflowAutomation.Workflows.Infrastructure.Configurations.Workflow;
