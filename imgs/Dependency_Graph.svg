@@ -1,0 +1,908 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="0 0 1860 1480" width="100%" height="100%"
+     style="background-color: #F8FAFC; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+
+  <defs>
+    <!-- Subtle ByteByteGo Dot Grid Pattern -->
+    <pattern id="bg-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.1" fill="#CBD5E1" opacity="0.65"/>
+    </pattern>
+
+    <!-- Soft Card Drop Shadow -->
+    <filter id="card-shadow" x="-8%" y="-8%" width="116%" height="124%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.06"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#0F172A" flood-opacity="0.04"/>
+    </filter>
+
+    <!-- Subgraph Container Shadow -->
+    <filter id="zone-shadow" x="-4%" y="-4%" width="108%" height="110%">
+      <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#0F172A" flood-opacity="0.04"/>
+    </filter>
+
+    <!-- Glowing Particle Filter -->
+    <filter id="glow-pulse" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Arrowhead Markers (Color-Coded by Source Layer/Group) -->
+    <marker id="arrow-api" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8.5 5 L 0 8.5 z" fill="#4F46E5"/>
+    </marker>
+    <marker id="arrow-wrk" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8.5 5 L 0 8.5 z" fill="#0284C7"/>
+    </marker>
+    <marker id="arrow-sch" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8.5 5 L 0 8.5 z" fill="#7C3AED"/>
+    </marker>
+    <marker id="arrow-id" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.2 L 8.5 5 L 0 8.8 z" fill="#0D9488"/>
+    </marker>
+    <marker id="arrow-ws" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.2 L 8.5 5 L 0 8.8 z" fill="#059669"/>
+    </marker>
+    <marker id="arrow-wf" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.2 L 8.5 5 L 0 8.8 z" fill="#D97706"/>
+    </marker>
+    <marker id="arrow-infra" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.2 L 8.5 5 L 0 8.8 z" fill="#9333EA"/>
+    </marker>
+    <marker id="arrow-shared" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.2 L 8.5 5 L 0 8.8 z" fill="#E11D48"/>
+    </marker>
+
+    <!-- Linear Gradients for Zone Backgrounds -->
+    <linearGradient id="grad-hosts" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#EEF2FF" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#E0E7FF" stop-opacity="0.55"/>
+    </linearGradient>
+    <linearGradient id="grad-id" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0FDFA" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#CCFBF1" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="grad-ws" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ECFDF5" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#D1FAE5" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="grad-wf" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFBEB" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#FEF3C7" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="grad-infra" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAF5FF" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#F3E8FF" stop-opacity="0.5"/>
+    </linearGradient>
+    <linearGradient id="grad-shared" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFF1F2" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#FFE4E6" stop-opacity="0.55"/>
+    </linearGradient>
+  </defs>
+
+  <style>
+    @keyframes flowDash {
+      from { stroke-dashoffset: 24; }
+      to   { stroke-dashoffset: 0; }
+    }
+    @keyframes flowDashFast {
+      from { stroke-dashoffset: 20; }
+      to   { stroke-dashoffset: 0; }
+    }
+    @keyframes pulseRing {
+      0%   { r: 4px; opacity: 0.9; }
+      70%  { r: 11px; opacity: 0; }
+      100% { r: 11px; opacity: 0; }
+    }
+
+    .edge-base {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .edge-flow {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 6 6;
+      animation: flowDash 1.1s linear infinite;
+    }
+    .edge-flow-slow {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 8 6;
+      animation: flowDash 1.6s linear infinite;
+    }
+    .edge-flow-fast {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 5 5;
+      animation: flowDashFast 0.85s linear infinite;
+    }
+
+    .node-card {
+      transition: transform 0.2s ease;
+      cursor: pointer;
+    }
+    .node-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .pulse-circle {
+      animation: pulseRing 2.2s cubic-bezier(0.2, 0.8, 0.4, 1) infinite;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Consolas, monospace;
+    }
+  </style>
+
+  <!-- ================= BACKGROUND & OUTER FRAME ================= -->
+  <rect x="0" y="0" width="1860" height="1480" fill="#F8FAFC"/>
+  <rect x="16" y="16" width="1828" height="1448" rx="18" fill="url(#bg-grid)" stroke="#E2E8F0" stroke-width="2"/>
+
+  <!-- ================= HEADER BANNER (ByteByteGo Style) ================= -->
+  <g transform="translate(40, 32)">
+    <rect x="0" y="0" width="1780" height="84" rx="14" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="10" height="84" rx="5" fill="#4F46E5"/>
+
+    <!-- Brand Style Tag (Generously sized so text never overflows) -->
+    <rect x="26" y="15" width="178" height="24" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+    <circle cx="40" cy="27" r="4" fill="#4F46E5"/>
+    <circle cx="40" cy="27" r="4" fill="#4F46E5" class="pulse-circle"/>
+    <text x="52" y="31" fill="#4338CA" font-size="10.5" font-weight="800" letter-spacing="0.6">SYSTEM ARCHITECTURE</text>
+
+    <!-- Main Title -->
+    <text x="218" y="33" fill="#0F172A" font-size="21" font-weight="800" letter-spacing="-0.3">
+      WorkflowAutomation — Modular Monolith Dependency Graph
+    </text>
+    <!-- Subtitle -->
+    <text x="26" y="62" fill="#475569" font-size="13" font-weight="500">
+      Top-Down (graph TD) Clean Architecture • 6 Subgraphs • 15 Components • 41 Animated Dependency Flows
+    </text>
+
+    <!-- Visual Legend on Right of Header -->
+    <g transform="translate(915, 14)">
+      <rect x="0" y="0" width="845" height="56" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+      <text x="16" y="21" fill="#334155" font-size="10.5" font-weight="700" letter-spacing="0.5">DEPENDENCY FLOW LEGEND (SOURCE &#8594; TARGET)</text>
+
+      <g transform="translate(16, 38)">
+        <line x1="0" y1="0" x2="26" y2="0" stroke="#4F46E5" stroke-width="2.5" stroke-dasharray="4 3"/>
+        <circle cx="13" cy="0" r="3" fill="#4F46E5"/>
+        <text x="32" y="4" fill="#334155" font-size="11" font-weight="600">API Root (8)</text>
+
+        <line x1="115" y1="0" x2="141" y2="0" stroke="#0284C7" stroke-width="2.5" stroke-dasharray="4 3"/>
+        <circle cx="128" cy="0" r="3" fill="#0284C7"/>
+        <text x="147" y="4" fill="#334155" font-size="11" font-weight="600">Worker Root (5)</text>
+
+        <line x1="248" y1="0" x2="274" y2="0" stroke="#7C3AED" stroke-width="2.5" stroke-dasharray="4 3"/>
+        <circle cx="261" cy="0" r="3" fill="#7C3AED"/>
+        <text x="280" y="4" fill="#334155" font-size="11" font-weight="600">Scheduler Root (4)</text>
+
+        <line x1="395" y1="0" x2="421" y2="0" stroke="#0D9488" stroke-width="2.5" stroke-dasharray="4 3"/>
+        <circle cx="408" cy="0" r="3" fill="#0D9488"/>
+        <text x="427" y="4" fill="#334155" font-size="11" font-weight="600">Identity (6)</text>
+
+        <line x1="504" y1="0" x2="530" y2="0" stroke="#059669" stroke-width="2.5" stroke-dasharray="4 3"/>
+        <circle cx="517" cy="0" r="3" fill="#059669"/>
+        <text x="536" y="4" fill="#334155" font-size="11" font-weight="600">Workspaces (6)</text>
+
+        <line x1="634" y1="0" x2="660" y2="0" stroke="#D97706" stroke-width="2.5" stroke-dasharray="4 3"/>
+        <circle cx="647" cy="0" r="3" fill="#D97706"/>
+        <text x="666" y="4" fill="#334155" font-size="11" font-weight="600">Workflows (7)</text>
+
+        <line x1="752" y1="0" x2="774" y2="0" stroke="#9333EA" stroke-width="2.5" stroke-dasharray="4 3"/>
+        <text x="779" y="4" fill="#334155" font-size="11" font-weight="600">Infra/SC (5)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ======================================================================= -->
+  <!--                     SUBGRAPH ZONE CONTAINERS (6 ZONES)                  -->
+  <!-- ======================================================================= -->
+
+  <!-- 1. SUBGRAPH: Hosts -->
+  <g id="subgraph-hosts" filter="url(#zone-shadow)">
+    <rect x="40" y="140" width="1780" height="162" rx="16" fill="url(#grad-hosts)" stroke="#6366F1" stroke-width="2" stroke-dasharray="8 5"/>
+    <rect x="60" y="126" width="130" height="28" rx="8" fill="#4F46E5"/>
+    <text x="125" y="144" text-anchor="middle" fill="#FFFFFF" font-size="12" font-weight="700" letter-spacing="0.6">Hosts</text>
+    <text x="1540" y="164" fill="#4338CA" font-size="11.5" font-weight="600" opacity="0.85">Composition Roots &amp; Entrypoints</text>
+  </g>
+
+  <!-- 2. SUBGRAPH: Identity Module -->
+  <g id="subgraph-identity" filter="url(#zone-shadow)">
+    <rect x="40" y="388" width="430" height="625" rx="16" fill="url(#grad-id)" stroke="#14B8A6" stroke-width="2" stroke-dasharray="8 5"/>
+    <rect x="60" y="374" width="170" height="28" rx="8" fill="#0D9488"/>
+    <text x="145" y="392" text-anchor="middle" fill="#FFFFFF" font-size="12" font-weight="700" letter-spacing="0.5">Identity Module</text>
+    <text x="80" y="424" fill="#0F766E" font-size="10.5" font-weight="700" letter-spacing="0.6" opacity="0.75">INFRASTRUCTURE ADAPTER</text>
+    <text x="80" y="618" fill="#0F766E" font-size="10.5" font-weight="700" letter-spacing="0.6" opacity="0.75">APPLICATION LAYER</text>
+    <text x="80" y="812" fill="#0F766E" font-size="10.5" font-weight="700" letter-spacing="0.6" opacity="0.75">DOMAIN CORE ENTITIES</text>
+  </g>
+
+  <!-- 3. SUBGRAPH: Workspaces Module -->
+  <g id="subgraph-workspaces" filter="url(#zone-shadow)">
+    <rect x="505" y="388" width="450" height="625" rx="16" fill="url(#grad-ws)" stroke="#10B981" stroke-width="2" stroke-dasharray="8 5"/>
+    <rect x="525" y="374" width="190" height="28" rx="8" fill="#059669"/>
+    <text x="620" y="392" text-anchor="middle" fill="#FFFFFF" font-size="12" font-weight="700" letter-spacing="0.5">Workspaces Module</text>
+    <text x="545" y="424" fill="#047857" font-size="10.5" font-weight="700" letter-spacing="0.6" opacity="0.75">INFRASTRUCTURE ADAPTER</text>
+    <text x="545" y="618" fill="#047857" font-size="10.5" font-weight="700" letter-spacing="0.6" opacity="0.75">APPLICATION LAYER</text>
+    <text x="545" y="812" fill="#047857" font-size="10.5" font-weight="700" letter-spacing="0.6" opacity="0.75">DOMAIN CORE ENTITIES</text>
+  </g>
+
+  <!-- 4. SUBGRAPH: Workflows Module -->
+  <g id="subgraph-workflows" filter="url(#zone-shadow)">
+    <rect x="990" y="388" width="430" height="625" rx="16" fill="url(#grad-wf)" stroke="#F59E0B" stroke-width="2" stroke-dasharray="8 5"/>
+    <rect x="1010" y="374" width="184" height="28" rx="8" fill="#D97706"/>
+    <text x="1102" y="392" text-anchor="middle" fill="#FFFFFF" font-size="12" font-weight="700" letter-spacing="0.5">Workflows Module</text>
+    <text x="1030" y="424" fill="#B45309" font-size="10.5" font-weight="700" letter-spacing="0.6" opacity="0.75">INFRASTRUCTURE ADAPTER</text>
+    <text x="1030" y="618" fill="#B45309" font-size="10.5" font-weight="700" letter-spacing="0.6" opacity="0.75">APPLICATION LAYER</text>
+    <text x="1030" y="812" fill="#B45309" font-size="10.5" font-weight="700" letter-spacing="0.6" opacity="0.75">DOMAIN CORE ENTITIES</text>
+  </g>
+
+  <!-- 5. SUBGRAPH: Infrastructure Layer -->
+  <g id="subgraph-infrastructure" filter="url(#zone-shadow)">
+    <rect x="1455" y="388" width="365" height="625" rx="16" fill="url(#grad-infra)" stroke="#A855F7" stroke-width="2" stroke-dasharray="8 5"/>
+    <rect x="1475" y="374" width="190" height="28" rx="8" fill="#9333EA"/>
+    <text x="1570" y="392" text-anchor="middle" fill="#FFFFFF" font-size="12" font-weight="700" letter-spacing="0.5">Infrastructure Layer</text>
+    <text x="1477" y="424" fill="#6B21A8" font-size="10.5" font-weight="700" letter-spacing="0.6" opacity="0.8">SHARED EF CORE CONTEXT</text>
+  </g>
+
+  <!-- 6. SUBGRAPH: Shared -->
+  <g id="subgraph-shared" filter="url(#zone-shadow)">
+    <rect x="40" y="1110" width="1780" height="328" rx="16" fill="url(#grad-shared)" stroke="#F43F5E" stroke-width="2" stroke-dasharray="8 5"/>
+    <rect x="60" y="1096" width="120" height="28" rx="8" fill="#E11D48"/>
+    <text x="120" y="1114" text-anchor="middle" fill="#FFFFFF" font-size="12" font-weight="700" letter-spacing="0.5">Shared</text>
+    <text x="1475" y="1136" fill="#BE123C" font-size="11.5" font-weight="600" opacity="0.85">Cross-Cutting Contracts &amp; Foundational Kernel</text>
+  </g>
+
+  <!-- ======================================================================= -->
+  <!--                     ALL 41 DIRECTED EDGES + ANIMATIONS                  -->
+  <!-- ======================================================================= -->
+
+  <!-- GROUP 1: API COMPOSITION ROOT (8 EDGES: IA, II, WSA, WSI, WA, WI, INFRA, SC) -->
+  <g id="edges-api" stroke="#4F46E5">
+    <!-- 1. API to II -->
+    <path id="p-api-ii" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 210 278 L 210 350 L 340 350 L 340 436" marker-end="url(#arrow-api)"/>
+    <path class="edge-flow-fast" stroke-width="2"
+          d="M 210 278 L 210 350 L 340 350 L 340 436" marker-end="url(#arrow-api)"/>
+
+    <!-- 2. API to IA -->
+    <path id="p-api-ia" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 175 278 L 175 358 L 56 358 L 56 668 L 80 668" marker-end="url(#arrow-api)"/>
+    <path class="edge-flow-fast" stroke-width="2"
+          d="M 175 278 L 175 358 L 56 358 L 56 668 L 80 668" marker-end="url(#arrow-api)"/>
+
+    <!-- 3. API to WSI -->
+    <path id="p-api-wsi" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 250 278 L 250 342 L 800 342 L 800 436" marker-end="url(#arrow-api)"/>
+    <path class="edge-flow-fast" stroke-width="2"
+          d="M 250 278 L 250 342 L 800 342 L 800 436" marker-end="url(#arrow-api)"/>
+
+    <!-- 4. API to WSA -->
+    <path id="p-api-wsa" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 285 278 L 285 350 L 482 350 L 482 658 L 545 658" marker-end="url(#arrow-api)"/>
+    <path class="edge-flow-fast" stroke-width="2"
+          d="M 285 278 L 285 350 L 482 350 L 482 658 L 545 658" marker-end="url(#arrow-api)"/>
+
+    <!-- 5. API to WI -->
+    <path id="p-api-wi" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 320 278 L 320 334 L 1270 334 L 1270 436" marker-end="url(#arrow-api)"/>
+    <path class="edge-flow-fast" stroke-width="2"
+          d="M 320 278 L 320 334 L 1270 334 L 1270 436" marker-end="url(#arrow-api)"/>
+
+    <!-- 6. API to WA -->
+    <path id="p-api-wa" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 355 278 L 355 326 L 966 326 L 966 658 L 1030 658" marker-end="url(#arrow-api)"/>
+    <path class="edge-flow-fast" stroke-width="2"
+          d="M 355 278 L 355 326 L 966 326 L 966 658 L 1030 658" marker-end="url(#arrow-api)"/>
+
+    <!-- 7. API to INFRA -->
+    <path id="p-api-infra" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 390 278 L 390 318 L 1695 318 L 1695 520" marker-end="url(#arrow-api)"/>
+    <path class="edge-flow-fast" stroke-width="2"
+          d="M 390 278 L 390 318 L 1695 318 L 1695 520" marker-end="url(#arrow-api)"/>
+
+    <!-- 8. API to SC (Clean outer-left channel down to Shared.Contracts) -->
+    <path id="p-api-sc" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 140 278 L 140 318 L 26 318 L 26 1192 L 1135 1192" marker-end="url(#arrow-api)"/>
+    <path class="edge-flow-fast" stroke-width="2"
+          d="M 140 278 L 140 318 L 26 318 L 26 1192 L 1135 1192" marker-end="url(#arrow-api)"/>
+  </g>
+
+  <!-- GROUP 2: WORKER COMPOSITION ROOT (5 EDGES: WA, WSA, WI, INFRA, SC) -->
+  <g id="edges-wrk" stroke="#0284C7">
+    <!-- 9. WRK to WSA -->
+    <path id="p-wrk-wsa" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 805 278 L 805 358 L 490 358 L 490 674 L 545 674" marker-end="url(#arrow-wrk)"/>
+    <path class="edge-flow" stroke-width="2"
+          d="M 805 278 L 805 358 L 490 358 L 490 674 L 545 674" marker-end="url(#arrow-wrk)"/>
+
+    <!-- 10. WRK to WI -->
+    <path id="p-wrk-wi" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 930 278 L 930 350 L 1320 350 L 1320 436" marker-end="url(#arrow-wrk)"/>
+    <path class="edge-flow" stroke-width="2"
+          d="M 930 278 L 930 350 L 1320 350 L 1320 436" marker-end="url(#arrow-wrk)"/>
+
+    <!-- 11. WRK to WA -->
+    <path id="p-wrk-wa" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 890 278 L 890 358 L 974 358 L 974 674 L 1030 674" marker-end="url(#arrow-wrk)"/>
+    <path class="edge-flow" stroke-width="2"
+          d="M 890 278 L 890 358 L 974 358 L 974 674 L 1030 674" marker-end="url(#arrow-wrk)"/>
+
+    <!-- 12. WRK to INFRA -->
+    <path id="p-wrk-infra" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 970 278 L 970 342 L 1730 342 L 1730 520" marker-end="url(#arrow-wrk)"/>
+    <path class="edge-flow" stroke-width="2"
+          d="M 970 278 L 970 342 L 1730 342 L 1730 520" marker-end="url(#arrow-wrk)"/>
+
+    <!-- 13. WRK to SC -->
+    <path id="p-wrk-sc" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 1010 278 L 1010 366 L 1434 366 L 1434 1142" marker-end="url(#arrow-wrk)"/>
+    <path class="edge-flow" stroke-width="2"
+          d="M 1010 278 L 1010 366 L 1434 366 L 1434 1142" marker-end="url(#arrow-wrk)"/>
+  </g>
+
+  <!-- GROUP 3: SCHEDULER COMPOSITION ROOT (4 EDGES: WA, WSA, INFRA, SC) -->
+  <g id="edges-sch" stroke="#7C3AED">
+    <!-- 14. SCH to WSA -->
+    <path id="p-sch-wsa" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 1450 278 L 1450 366 L 498 366 L 498 690 L 545 690" marker-end="url(#arrow-sch)"/>
+    <path class="edge-flow-slow" stroke-width="2"
+          d="M 1450 278 L 1450 366 L 498 366 L 498 690 L 545 690" marker-end="url(#arrow-sch)"/>
+
+    <!-- 15. SCH to WA -->
+    <path id="p-sch-wa" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 1510 278 L 1510 358 L 982 358 L 982 690 L 1030 690" marker-end="url(#arrow-sch)"/>
+    <path class="edge-flow-slow" stroke-width="2"
+          d="M 1510 278 L 1510 358 L 982 358 L 982 690 L 1030 690" marker-end="url(#arrow-sch)"/>
+
+    <!-- 16. SCH to INFRA -->
+    <path id="p-sch-infra" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 1765 278 L 1765 520" marker-end="url(#arrow-sch)"/>
+    <path class="edge-flow-slow" stroke-width="2"
+          d="M 1765 278 L 1765 520" marker-end="url(#arrow-sch)"/>
+
+    <!-- 17. SCH to SC -->
+    <path id="p-sch-sc" class="edge-base" stroke-width="2" stroke-opacity="0.22"
+          d="M 1740 278 L 1740 350 L 1834 350 L 1834 1192 L 1585 1192" marker-end="url(#arrow-sch)"/>
+    <path class="edge-flow-slow" stroke-width="2"
+          d="M 1740 278 L 1740 350 L 1834 350 L 1834 1192 L 1585 1192" marker-end="url(#arrow-sch)"/>
+  </g>
+
+  <!-- GROUP 4: IDENTITY MODULE (6 EDGES: II->IA, II->IC, II->INFRA, IA->IC, IA->SK, IC->SK) -->
+  <g id="edges-identity" stroke="#0D9488">
+    <!-- 18. II to IA -->
+    <path id="p-ii-ia" class="edge-base" stroke-width="2.4" stroke-opacity="0.28"
+          d="M 255 538 L 255 630" marker-end="url(#arrow-id)"/>
+    <path class="edge-flow-fast" stroke-width="2.4"
+          d="M 255 538 L 255 630" marker-end="url(#arrow-id)"/>
+
+    <!-- 19. II to IC (Left bypass inside Identity Module) -->
+    <path id="p-ii-ic" class="edge-base" stroke-width="2.2" stroke-opacity="0.25"
+          d="M 80 500 L 62 500 L 62 875 L 80 875" marker-end="url(#arrow-id)"/>
+    <path class="edge-flow" stroke-width="2.2"
+          d="M 80 500 L 62 500 L 62 875 L 80 875" marker-end="url(#arrow-id)"/>
+
+    <!-- 20. II to INFRA -->
+    <path id="p-ii-infra" class="edge-base" stroke-width="2.2" stroke-opacity="0.25"
+          d="M 430 472 L 452 472 L 452 568 L 1477 568" marker-end="url(#arrow-id)"/>
+    <path class="edge-flow" stroke-width="2.2"
+          d="M 430 472 L 452 472 L 452 568 L 1477 568" marker-end="url(#arrow-id)"/>
+
+    <!-- 21. IA to IC -->
+    <path id="p-ia-ic" class="edge-base" stroke-width="2.4" stroke-opacity="0.28"
+          d="M 255 732 L 255 824" marker-end="url(#arrow-id)"/>
+    <path class="edge-flow-fast" stroke-width="2.4"
+          d="M 255 732 L 255 824" marker-end="url(#arrow-id)"/>
+
+    <!-- 22. IA to SK -->
+    <path id="p-ia-sk" class="edge-base" stroke-width="2.2" stroke-opacity="0.25"
+          d="M 430 695 L 452 695 L 452 1055 L 540 1055 L 540 1288" marker-end="url(#arrow-id)"/>
+    <path class="edge-flow" stroke-width="2.2"
+          d="M 430 695 L 452 695 L 452 1055 L 540 1055 L 540 1288" marker-end="url(#arrow-id)"/>
+
+    <!-- 23. IC to SK -->
+    <path id="p-ic-sk" class="edge-base" stroke-width="2.4" stroke-opacity="0.28"
+          d="M 255 944 L 255 1340 L 495 1340" marker-end="url(#arrow-id)"/>
+    <path class="edge-flow-fast" stroke-width="2.4"
+          d="M 255 944 L 255 1340 L 495 1340" marker-end="url(#arrow-id)"/>
+  </g>
+
+  <!-- GROUP 5: WORKSPACES MODULE (6 EDGES: WSI->WSA, WSI->WSC, WSI->INFRA, WSA->WSC, WSA->SK, WSC->SK) -->
+  <g id="edges-workspaces" stroke="#059669">
+    <!-- 24. WSI to WSA -->
+    <path id="p-wsi-wsa" class="edge-base" stroke-width="2.4" stroke-opacity="0.28"
+          d="M 730 538 L 730 630" marker-end="url(#arrow-ws)"/>
+    <path class="edge-flow-fast" stroke-width="2.4"
+          d="M 730 538 L 730 630" marker-end="url(#arrow-ws)"/>
+
+    <!-- 25. WSI to WSC -->
+    <path id="p-wsi-wsc" class="edge-base" stroke-width="2.2" stroke-opacity="0.25"
+          d="M 545 500 L 525 500 L 525 875 L 545 875" marker-end="url(#arrow-ws)"/>
+    <path class="edge-flow" stroke-width="2.2"
+          d="M 545 500 L 525 500 L 525 875 L 545 875" marker-end="url(#arrow-ws)"/>
+
+    <!-- 26. WSI to INFRA -->
+    <path id="p-wsi-infra" class="edge-base" stroke-width="2.2" stroke-opacity="0.25"
+          d="M 915 485 L 938 485 L 938 582 L 1477 582" marker-end="url(#arrow-ws)"/>
+    <path class="edge-flow" stroke-width="2.2"
+          d="M 915 485 L 938 485 L 938 582 L 1477 582" marker-end="url(#arrow-ws)"/>
+
+    <!-- 27. WSA to WSC -->
+    <path id="p-wsa-wsc" class="edge-base" stroke-width="2.4" stroke-opacity="0.28"
+          d="M 730 732 L 730 824" marker-end="url(#arrow-ws)"/>
+    <path class="edge-flow-fast" stroke-width="2.4"
+          d="M 730 732 L 730 824" marker-end="url(#arrow-ws)"/>
+
+    <!-- 28. WSA to SK -->
+    <path id="p-wsa-sk" class="edge-base" stroke-width="2.2" stroke-opacity="0.25"
+          d="M 915 695 L 938 695 L 938 1068 L 635 1068 L 635 1288" marker-end="url(#arrow-ws)"/>
+    <path class="edge-flow" stroke-width="2.2"
+          d="M 915 695 L 938 695 L 938 1068 L 635 1068 L 635 1288" marker-end="url(#arrow-ws)"/>
+
+    <!-- 29. WSC to SK -->
+    <path id="p-wsc-sk" class="edge-base" stroke-width="2.4" stroke-opacity="0.28"
+          d="M 730 944 L 730 1288" marker-end="url(#arrow-ws)"/>
+    <path class="edge-flow-fast" stroke-width="2.4"
+          d="M 730 944 L 730 1288" marker-end="url(#arrow-ws)"/>
+  </g>
+
+  <!-- GROUP 6: WORKFLOWS MODULE (7 EDGES: WI->WA, WI->WC, WI->INFRA, WA->WC, WA->SK, WA->SC, WC->SK) -->
+  <g id="edges-workflows" stroke="#D97706">
+    <!-- 30. WI to WA -->
+    <path id="p-wi-wa" class="edge-base" stroke-width="2.4" stroke-opacity="0.28"
+          d="M 1205 538 L 1205 630" marker-end="url(#arrow-wf)"/>
+    <path class="edge-flow-fast" stroke-width="2.4"
+          d="M 1205 538 L 1205 630" marker-end="url(#arrow-wf)"/>
+
+    <!-- 31. WI to WC -->
+    <path id="p-wi-wc" class="edge-base" stroke-width="2.2" stroke-opacity="0.25"
+          d="M 1030 500 L 1010 500 L 1010 875 L 1030 875" marker-end="url(#arrow-wf)"/>
+    <path class="edge-flow" stroke-width="2.2"
+          d="M 1030 500 L 1010 500 L 1010 875 L 1030 875" marker-end="url(#arrow-wf)"/>
+
+    <!-- 32. WI to INFRA -->
+    <path id="p-wi-infra" class="edge-base" stroke-width="2.2" stroke-opacity="0.25"
+          d="M 1380 485 L 1435 485 L 1435 596 L 1477 596" marker-end="url(#arrow-wf)"/>
+    <path class="edge-flow" stroke-width="2.2"
+          d="M 1380 485 L 1435 485 L 1435 596 L 1477 596" marker-end="url(#arrow-wf)"/>
+
+    <!-- 33. WA to WC -->
+    <path id="p-wa-wc" class="edge-base" stroke-width="2.4" stroke-opacity="0.28"
+          d="M 1205 732 L 1205 824" marker-end="url(#arrow-wf)"/>
+    <path class="edge-flow-fast" stroke-width="2.4"
+          d="M 1205 732 L 1205 824" marker-end="url(#arrow-wf)"/>
+
+    <!-- 34. WA to SK -->
+    <path id="p-wa-sk" class="edge-base" stroke-width="2.2" stroke-opacity="0.25"
+          d="M 1380 680 L 1402 680 L 1402 1055 L 860 1055 L 860 1288" marker-end="url(#arrow-wf)"/>
+    <path class="edge-flow" stroke-width="2.2"
+          d="M 1380 680 L 1402 680 L 1402 1055 L 860 1055 L 860 1288" marker-end="url(#arrow-wf)"/>
+
+    <!-- 35. WA to SC -->
+    <path id="p-wa-sc" class="edge-base" stroke-width="2.4" stroke-opacity="0.28"
+          d="M 1380 704 L 1412 704 L 1412 1142" marker-end="url(#arrow-wf)"/>
+    <path class="edge-flow-fast" stroke-width="2.4"
+          d="M 1380 704 L 1412 704 L 1412 1142" marker-end="url(#arrow-wf)"/>
+
+    <!-- 36. WC to SK -->
+    <path id="p-wc-sk" class="edge-base" stroke-width="2.4" stroke-opacity="0.28"
+          d="M 1205 944 L 1205 1080 L 795 1080 L 795 1288" marker-end="url(#arrow-wf)"/>
+    <path class="edge-flow-fast" stroke-width="2.4"
+          d="M 1205 944 L 1205 1080 L 795 1080 L 795 1288" marker-end="url(#arrow-wf)"/>
+  </g>
+
+  <!-- GROUP 7: INFRASTRUCTURE LAYER (4 EDGES: INFRA->SK, INFRA->IC, INFRA->WSC, INFRA->WC) -->
+  <g id="edges-infra" stroke="#9333EA">
+    <!-- 37. INFRA to WC -->
+    <path id="p-infra-wc" class="edge-base" stroke-width="2.3" stroke-opacity="0.26"
+          d="M 1477 625 L 1438 625 L 1438 865 L 1380 865" marker-end="url(#arrow-infra)"/>
+    <path class="edge-flow" stroke-width="2.3"
+          d="M 1477 625 L 1438 625 L 1438 865 L 1380 865" marker-end="url(#arrow-infra)"/>
+
+    <!-- 38. INFRA to WSC -->
+    <path id="p-infra-wsc" class="edge-base" stroke-width="2.3" stroke-opacity="0.26"
+          d="M 1477 645 L 1445 645 L 1445 978 L 820 978 L 820 944" marker-end="url(#arrow-infra)"/>
+    <path class="edge-flow" stroke-width="2.3"
+          d="M 1477 645 L 1445 645 L 1445 978 L 820 978 L 820 944" marker-end="url(#arrow-infra)"/>
+
+    <!-- 39. INFRA to IC -->
+    <path id="p-infra-ic" class="edge-base" stroke-width="2.3" stroke-opacity="0.26"
+          d="M 1477 665 L 1452 665 L 1452 992 L 340 992 L 340 944" marker-end="url(#arrow-infra)"/>
+    <path class="edge-flow" stroke-width="2.3"
+          d="M 1477 665 L 1452 665 L 1452 992 L 340 992 L 340 944" marker-end="url(#arrow-infra)"/>
+
+    <!-- 40. INFRA to SK -->
+    <path id="p-infra-sk" class="edge-base" stroke-width="2.4" stroke-opacity="0.28"
+          d="M 1638 680 L 1638 1340 L 965 1340" marker-end="url(#arrow-infra)"/>
+    <path class="edge-flow-fast" stroke-width="2.4"
+          d="M 1638 680 L 1638 1340 L 965 1340" marker-end="url(#arrow-infra)"/>
+  </g>
+
+  <!-- GROUP 8: SHARED CONTRACTS (1 EDGE: SC to SK) -->
+  <g id="edges-shared" stroke="#E11D48">
+    <!-- 41. SC to SK -->
+    <path id="p-sc-sk" class="edge-base" stroke-width="2.8" stroke-opacity="0.3"
+          d="M 1135 1210 L 915 1210 L 915 1288" marker-end="url(#arrow-shared)"/>
+    <path class="edge-flow-fast" stroke-width="2.8"
+          d="M 1135 1210 L 915 1210 L 915 1288" marker-end="url(#arrow-shared)"/>
+  </g>
+
+  <!-- ======================================================================= -->
+  <!--          ANIMATED GLOWING PACKETS (ByteByteGo Data/Dependency Pulses)   -->
+  <!-- ======================================================================= -->
+  <g filter="url(#glow-pulse)">
+    <!-- API Pulses -->
+    <circle r="4.5" fill="#4F46E5">
+      <animateMotion dur="3.2s" repeatCount="indefinite"><mpath xlink:href="#p-api-ii"/></animateMotion>
+    </circle>
+    <circle r="4.5" fill="#4F46E5">
+      <animateMotion dur="3.8s" begin="0.6s" repeatCount="indefinite"><mpath xlink:href="#p-api-wsi"/></animateMotion>
+    </circle>
+    <circle r="4.5" fill="#4F46E5">
+      <animateMotion dur="4.2s" begin="1.1s" repeatCount="indefinite"><mpath xlink:href="#p-api-wi"/></animateMotion>
+    </circle>
+    <circle r="4.5" fill="#4F46E5">
+      <animateMotion dur="4.6s" begin="0.3s" repeatCount="indefinite"><mpath xlink:href="#p-api-infra"/></animateMotion>
+    </circle>
+
+    <!-- Worker Pulses -->
+    <circle r="4.5" fill="#0284C7">
+      <animateMotion dur="3.4s" begin="0.4s" repeatCount="indefinite"><mpath xlink:href="#p-wrk-wa"/></animateMotion>
+    </circle>
+    <circle r="4.5" fill="#0284C7">
+      <animateMotion dur="3.9s" begin="1.2s" repeatCount="indefinite"><mpath xlink:href="#p-wrk-infra"/></animateMotion>
+    </circle>
+
+    <!-- Scheduler Pulses -->
+    <circle r="4.5" fill="#7C3AED">
+      <animateMotion dur="2.6s" begin="0.2s" repeatCount="indefinite"><mpath xlink:href="#p-sch-infra"/></animateMotion>
+    </circle>
+    <circle r="4.5" fill="#7C3AED">
+      <animateMotion dur="4.0s" begin="0.9s" repeatCount="indefinite"><mpath xlink:href="#p-sch-wa"/></animateMotion>
+    </circle>
+
+    <!-- Module Clean Architecture Pulses -->
+    <circle r="4" fill="#0D9488">
+      <animateMotion dur="1.8s" repeatCount="indefinite"><mpath xlink:href="#p-ii-ia"/></animateMotion>
+    </circle>
+    <circle r="4" fill="#0D9488">
+      <animateMotion dur="1.8s" begin="0.9s" repeatCount="indefinite"><mpath xlink:href="#p-ia-ic"/></animateMotion>
+    </circle>
+    <circle r="4" fill="#0D9488">
+      <animateMotion dur="3.0s" begin="0.5s" repeatCount="indefinite"><mpath xlink:href="#p-ic-sk"/></animateMotion>
+    </circle>
+
+    <circle r="4" fill="#059669">
+      <animateMotion dur="1.8s" begin="0.3s" repeatCount="indefinite"><mpath xlink:href="#p-wsi-wsa"/></animateMotion>
+    </circle>
+    <circle r="4" fill="#059669">
+      <animateMotion dur="1.8s" begin="1.2s" repeatCount="indefinite"><mpath xlink:href="#p-wsa-wsc"/></animateMotion>
+    </circle>
+    <circle r="4" fill="#059669">
+      <animateMotion dur="2.6s" begin="0.7s" repeatCount="indefinite"><mpath xlink:href="#p-wsc-sk"/></animateMotion>
+    </circle>
+
+    <circle r="4" fill="#D97706">
+      <animateMotion dur="1.8s" begin="0.6s" repeatCount="indefinite"><mpath xlink:href="#p-wi-wa"/></animateMotion>
+    </circle>
+    <circle r="4" fill="#D97706">
+      <animateMotion dur="1.8s" begin="1.5s" repeatCount="indefinite"><mpath xlink:href="#p-wa-wc"/></animateMotion>
+    </circle>
+    <circle r="4" fill="#D97706">
+      <animateMotion dur="2.8s" begin="0.4s" repeatCount="indefinite"><mpath xlink:href="#p-wa-sc"/></animateMotion>
+    </circle>
+
+    <!-- Infra & Shared Pulses -->
+    <circle r="4.5" fill="#9333EA">
+      <animateMotion dur="3.6s" begin="0.5s" repeatCount="indefinite"><mpath xlink:href="#p-infra-sk"/></animateMotion>
+    </circle>
+    <circle r="4.5" fill="#E11D48">
+      <animateMotion dur="2.2s" repeatCount="indefinite"><mpath xlink:href="#p-sc-sk"/></animateMotion>
+    </circle>
+  </g>
+
+  <!-- ======================================================================= -->
+  <!--                        ALL 15 ARCHITECTURAL NODES                       -->
+  <!-- ======================================================================= -->
+
+  <!-- SUBGRAPH 1: HOSTS (3 NODES) -->
+
+  <!-- NODE 1: API [WorkflowAutomation.Api] -->
+  <g id="node-API" class="node-card" transform="translate(80, 176)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="420" height="102" rx="12" fill="#FFFFFF" stroke="#6366F1" stroke-width="2"/>
+    <rect x="0" y="0" width="8" height="102" rx="4" fill="#4F46E5"/>
+    <rect x="22" y="20" width="46" height="46" rx="10" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1.2"/>
+    <path d="M 35 36 L 41 43 L 35 50 M 45 50 L 55 50" stroke="#4F46E5" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="29" y="28" width="32" height="30" rx="4" stroke="#4F46E5" stroke-width="1.8" fill="none"/>
+    <rect x="82" y="16" width="44" height="20" rx="5" fill="#EEF2FF" stroke="#A5B4FC" stroke-width="1"/>
+    <text x="104" y="30" text-anchor="middle" fill="#4338CA" font-size="11" font-weight="800" class="font-mono">API</text>
+    <rect x="134" y="16" width="142" height="20" rx="5" fill="#F1F5F9"/>
+    <text x="205" y="30" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="600">API Composition Root</text>
+    <rect x="332" y="16" width="72" height="20" rx="10" fill="#EEF2FF"/>
+    <text x="368" y="30" text-anchor="middle" fill="#4F46E5" font-size="10" font-weight="700">8 deps &#8595;</text>
+    <text x="82" y="58" fill="#0F172A" font-size="16" font-weight="800">WorkflowAutomation.Api</text>
+    <text x="82" y="80" fill="#64748B" font-size="11.5" font-weight="500" class="font-mono">&#8594; IA, II, WSA, WSI, WA, WI, INFRA, SC</text>
+  </g>
+
+  <!-- NODE 2: WRK [WorkflowAutomation.Worker] -->
+  <g id="node-WRK" class="node-card" transform="translate(690, 176)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="420" height="102" rx="12" fill="#FFFFFF" stroke="#0284C7" stroke-width="2"/>
+    <rect x="0" y="0" width="8" height="102" rx="4" fill="#0284C7"/>
+    <rect x="22" y="20" width="46" height="46" rx="10" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1.2"/>
+    <circle cx="45" cy="43" r="9" stroke="#0284C7" stroke-width="2.2" fill="none"/>
+    <circle cx="45" cy="43" r="3" fill="#0284C7"/>
+    <path d="M 45 29 L 45 32 M 45 54 L 45 57 M 31 43 L 34 43 M 56 43 L 59 43 M 35 33 L 37 35 M 53 51 L 55 53 M 55 33 L 53 35 M 37 51 L 35 53" stroke="#0284C7" stroke-width="2.2" stroke-linecap="round"/>
+    <rect x="82" y="16" width="48" height="20" rx="5" fill="#E0F2FE" stroke="#7DD3FC" stroke-width="1"/>
+    <text x="106" y="30" text-anchor="middle" fill="#0369A1" font-size="11" font-weight="800" class="font-mono">WRK</text>
+    <rect x="138" y="16" width="160" height="20" rx="5" fill="#F1F5F9"/>
+    <text x="218" y="30" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="600">Worker Composition Root</text>
+    <rect x="332" y="16" width="72" height="20" rx="10" fill="#E0F2FE"/>
+    <text x="368" y="30" text-anchor="middle" fill="#0284C7" font-size="10" font-weight="700">5 deps &#8595;</text>
+    <text x="82" y="58" fill="#0F172A" font-size="16" font-weight="800">WorkflowAutomation.Worker</text>
+    <text x="82" y="80" fill="#64748B" font-size="11.5" font-weight="500" class="font-mono">&#8594; WA, WSA, WI, INFRA, SC</text>
+  </g>
+
+  <!-- NODE 3: SCH [WorkflowAutomation.Scheduler] -->
+  <g id="node-SCH" class="node-card" transform="translate(1365, 176)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="420" height="102" rx="12" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
+    <rect x="0" y="0" width="8" height="102" rx="4" fill="#7C3AED"/>
+    <rect x="22" y="20" width="46" height="46" rx="10" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="1.2"/>
+    <circle cx="45" cy="43" r="13" stroke="#7C3AED" stroke-width="2.2" fill="none"/>
+    <path d="M 45 35 L 45 43 L 51 47" stroke="#7C3AED" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="82" y="16" width="48" height="20" rx="5" fill="#EDE9FE" stroke="#C4B5FD" stroke-width="1"/>
+    <text x="106" y="30" text-anchor="middle" fill="#6D28D9" font-size="11" font-weight="800" class="font-mono">SCH</text>
+    <rect x="138" y="16" width="172" height="20" rx="5" fill="#F1F5F9"/>
+    <text x="224" y="30" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="600">Scheduler Composition Root</text>
+    <rect x="332" y="16" width="72" height="20" rx="10" fill="#EDE9FE"/>
+    <text x="368" y="30" text-anchor="middle" fill="#7C3AED" font-size="10" font-weight="700">4 deps &#8595;</text>
+    <text x="82" y="58" fill="#0F172A" font-size="16" font-weight="800">WorkflowAutomation.Scheduler</text>
+    <text x="82" y="80" fill="#64748B" font-size="11.5" font-weight="500" class="font-mono">&#8594; WA, WSA, INFRA, SC</text>
+  </g>
+
+
+  <!-- SUBGRAPH 2: IDENTITY MODULE (3 NODES) -->
+
+  <!-- NODE 4: II [Identity.Infrastructure] -->
+  <g id="node-II" class="node-card" transform="translate(80, 436)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="350" height="102" rx="12" fill="#FFFFFF" stroke="#14B8A6" stroke-width="2"/>
+    <rect x="0" y="0" width="8" height="102" rx="4" fill="#0D9488"/>
+    <rect x="20" y="22" width="42" height="42" rx="9" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1.2"/>
+    <path d="M 31 36 L 41 30 L 51 36 L 51 48 L 41 54 L 31 48 Z" stroke="#0D9488" stroke-width="2" fill="none" stroke-linejoin="round"/>
+    <circle cx="41" cy="42" r="3" fill="#0D9488"/>
+    <rect x="74" y="16" width="38" height="20" rx="5" fill="#CCFBF1" stroke="#5EEAD4" stroke-width="1"/>
+    <text x="93" y="30" text-anchor="middle" fill="#0F766E" font-size="11" font-weight="800" class="font-mono">II</text>
+    <rect x="120" y="16" width="124" height="20" rx="5" fill="#F1F5F9"/>
+    <text x="182" y="30" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="600">Module Infrastructure</text>
+    <text x="74" y="58" fill="#0F172A" font-size="15.5" font-weight="800">Identity.Infrastructure</text>
+    <text x="74" y="80" fill="#64748B" font-size="11.5" font-weight="500" class="font-mono">in: API • out: IA, IC, INFRA</text>
+  </g>
+
+  <!-- NODE 5: IA [Identity.Application] -->
+  <g id="node-IA" class="node-card" transform="translate(80, 630)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="350" height="102" rx="12" fill="#FFFFFF" stroke="#14B8A6" stroke-width="2"/>
+    <rect x="0" y="0" width="8" height="102" rx="4" fill="#0D9488"/>
+    <rect x="20" y="22" width="42" height="42" rx="9" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1.2"/>
+    <rect x="30" y="31" width="22" height="24" rx="3" stroke="#0D9488" stroke-width="2" fill="none"/>
+    <line x1="35" y1="38" x2="47" y2="38" stroke="#0D9488" stroke-width="2" stroke-linecap="round"/>
+    <line x1="35" y1="44" x2="47" y2="44" stroke="#0D9488" stroke-width="2" stroke-linecap="round"/>
+    <line x1="35" y1="50" x2="43" y2="50" stroke="#0D9488" stroke-width="2" stroke-linecap="round"/>
+    <rect x="74" y="16" width="38" height="20" rx="5" fill="#CCFBF1" stroke="#5EEAD4" stroke-width="1"/>
+    <text x="93" y="30" text-anchor="middle" fill="#0F766E" font-size="11" font-weight="800" class="font-mono">IA</text>
+    <rect x="120" y="16" width="116" height="20" rx="5" fill="#F1F5F9"/>
+    <text x="178" y="30" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="600">Application Layer</text>
+    <text x="74" y="58" fill="#0F172A" font-size="15.5" font-weight="800">Identity.Application</text>
+    <text x="74" y="80" fill="#64748B" font-size="11.5" font-weight="500" class="font-mono">in: API, II • out: IC, SK</text>
+  </g>
+
+  <!-- NODE 6: IC ["Identity.Core<br/>(ApplicationUser, ApplicationRole)"] -->
+  <g id="node-IC" class="node-card" transform="translate(80, 824)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="350" height="120" rx="12" fill="#FFFFFF" stroke="#0D9488" stroke-width="2.4"/>
+    <rect x="0" y="0" width="8" height="120" rx="4" fill="#0F766E"/>
+    <rect x="20" y="24" width="42" height="42" rx="9" fill="#CCFBF1" stroke="#5EEAD4" stroke-width="1.2"/>
+    <path d="M 41 31 L 51 35 L 51 44 C 51 50 41 55 41 55 C 41 55 31 50 31 44 L 31 35 Z" stroke="#0F766E" stroke-width="2" fill="none" stroke-linejoin="round"/>
+    <rect x="74" y="14" width="38" height="20" rx="5" fill="#0D9488"/>
+    <text x="93" y="28" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="800" class="font-mono">IC</text>
+    <rect x="120" y="14" width="96" height="20" rx="5" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1"/>
+    <text x="168" y="28" text-anchor="middle" fill="#0F766E" font-size="10.5" font-weight="700">Domain Core</text>
+    <text x="74" y="54" fill="#0F172A" font-size="15.5" font-weight="800">Identity.Core</text>
+    <rect x="74" y="64" width="260" height="24" rx="6" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1"/>
+    <text x="82" y="80" fill="#0F766E" font-size="11" font-weight="600" class="font-mono">(ApplicationUser, ApplicationRole)</text>
+    <text x="74" y="106" fill="#64748B" font-size="11" font-weight="500" class="font-mono">in: II, IA, INFRA • out: SK</text>
+  </g>
+
+
+  <!-- SUBGRAPH 3: WORKSPACES MODULE (3 NODES) -->
+
+  <!-- NODE 7: WSI [Workspaces.Infrastructure] -->
+  <g id="node-WSI" class="node-card" transform="translate(545, 436)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="370" height="102" rx="12" fill="#FFFFFF" stroke="#10B981" stroke-width="2"/>
+    <rect x="0" y="0" width="8" height="102" rx="4" fill="#059669"/>
+    <rect x="20" y="22" width="42" height="42" rx="9" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1.2"/>
+    <path d="M 31 36 L 41 30 L 51 36 L 51 48 L 41 54 L 31 48 Z" stroke="#059669" stroke-width="2" fill="none" stroke-linejoin="round"/>
+    <circle cx="41" cy="42" r="3" fill="#059669"/>
+    <rect x="74" y="16" width="44" height="20" rx="5" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1"/>
+    <text x="96" y="30" text-anchor="middle" fill="#047857" font-size="11" font-weight="800" class="font-mono">WSI</text>
+    <rect x="126" y="16" width="124" height="20" rx="5" fill="#F1F5F9"/>
+    <text x="188" y="30" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="600">Module Infrastructure</text>
+    <text x="74" y="58" fill="#0F172A" font-size="15.5" font-weight="800">Workspaces.Infrastructure</text>
+    <text x="74" y="80" fill="#64748B" font-size="11.5" font-weight="500" class="font-mono">in: API • out: WSA, WSC, INFRA</text>
+  </g>
+
+  <!-- NODE 8: WSA [Workspaces.Application] -->
+  <g id="node-WSA" class="node-card" transform="translate(545, 630)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="370" height="102" rx="12" fill="#FFFFFF" stroke="#10B981" stroke-width="2"/>
+    <rect x="0" y="0" width="8" height="102" rx="4" fill="#059669"/>
+    <rect x="20" y="22" width="42" height="42" rx="9" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1.2"/>
+    <rect x="30" y="31" width="22" height="24" rx="3" stroke="#059669" stroke-width="2" fill="none"/>
+    <line x1="35" y1="38" x2="47" y2="38" stroke="#059669" stroke-width="2" stroke-linecap="round"/>
+    <line x1="35" y1="44" x2="47" y2="44" stroke="#059669" stroke-width="2" stroke-linecap="round"/>
+    <line x1="35" y1="50" x2="43" y2="50" stroke="#059669" stroke-width="2" stroke-linecap="round"/>
+    <rect x="74" y="16" width="44" height="20" rx="5" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1"/>
+    <text x="96" y="30" text-anchor="middle" fill="#047857" font-size="11" font-weight="800" class="font-mono">WSA</text>
+    <rect x="126" y="16" width="116" height="20" rx="5" fill="#F1F5F9"/>
+    <text x="184" y="30" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="600">Application Layer</text>
+    <text x="74" y="58" fill="#0F172A" font-size="15.5" font-weight="800">Workspaces.Application</text>
+    <text x="74" y="80" fill="#64748B" font-size="11.5" font-weight="500" class="font-mono">in: API, WRK, SCH, WSI • out: WSC, SK</text>
+  </g>
+
+  <!-- NODE 9: WSC ["Workspaces.Core<br/>(Workspace, WorkspaceMembership, WorkspaceConnection)"] -->
+  <g id="node-WSC" class="node-card" transform="translate(545, 824)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="370" height="120" rx="12" fill="#FFFFFF" stroke="#059669" stroke-width="2.4"/>
+    <rect x="0" y="0" width="8" height="120" rx="4" fill="#047857"/>
+    <rect x="18" y="24" width="40" height="40" rx="9" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1.2"/>
+    <rect x="27" y="32" width="9" height="9" rx="2" stroke="#047857" stroke-width="1.8" fill="none"/>
+    <rect x="40" y="32" width="9" height="9" rx="2" stroke="#047857" stroke-width="1.8" fill="none"/>
+    <rect x="27" y="45" width="9" height="9" rx="2" stroke="#047857" stroke-width="1.8" fill="none"/>
+    <rect x="40" y="45" width="9" height="9" rx="2" stroke="#047857" stroke-width="1.8" fill="none"/>
+    <rect x="68" y="14" width="44" height="20" rx="5" fill="#059669"/>
+    <text x="90" y="28" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="800" class="font-mono">WSC</text>
+    <rect x="120" y="14" width="96" height="20" rx="5" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+    <text x="168" y="28" text-anchor="middle" fill="#047857" font-size="10.5" font-weight="700">Domain Core</text>
+    <text x="68" y="52" fill="#0F172A" font-size="15.5" font-weight="800">Workspaces.Core</text>
+    <rect x="68" y="60" width="290" height="32" rx="6" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+    <text x="75" y="74" fill="#047857" font-size="10" font-weight="600" class="font-mono">(Workspace, WorkspaceMembership,</text>
+    <text x="75" y="87" fill="#047857" font-size="10" font-weight="600" class="font-mono"> WorkspaceConnection)</text>
+    <text x="68" y="109" fill="#64748B" font-size="11" font-weight="500" class="font-mono">in: WSI, WSA, INFRA • out: SK</text>
+  </g>
+
+
+  <!-- SUBGRAPH 4: WORKFLOWS MODULE (3 NODES) -->
+
+  <!-- NODE 10: WI [Workflows.Infrastructure] -->
+  <g id="node-WI" class="node-card" transform="translate(1030, 436)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="350" height="102" rx="12" fill="#FFFFFF" stroke="#F59E0B" stroke-width="2"/>
+    <rect x="0" y="0" width="8" height="102" rx="4" fill="#D97706"/>
+    <rect x="20" y="22" width="42" height="42" rx="9" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1.2"/>
+    <path d="M 31 36 L 41 30 L 51 36 L 51 48 L 41 54 L 31 48 Z" stroke="#D97706" stroke-width="2" fill="none" stroke-linejoin="round"/>
+    <circle cx="41" cy="42" r="3" fill="#D97706"/>
+    <rect x="74" y="16" width="38" height="20" rx="5" fill="#FEF3C7" stroke="#FCD34D" stroke-width="1"/>
+    <text x="93" y="30" text-anchor="middle" fill="#B45309" font-size="11" font-weight="800" class="font-mono">WI</text>
+    <rect x="120" y="16" width="124" height="20" rx="5" fill="#F1F5F9"/>
+    <text x="182" y="30" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="600">Module Infrastructure</text>
+    <text x="74" y="58" fill="#0F172A" font-size="15.5" font-weight="800">Workflows.Infrastructure</text>
+    <text x="74" y="80" fill="#64748B" font-size="11.5" font-weight="500" class="font-mono">in: API, WRK • out: WA, WC, INFRA</text>
+  </g>
+
+  <!-- NODE 11: WA [Workflows.Application] -->
+  <g id="node-WA" class="node-card" transform="translate(1030, 630)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="350" height="102" rx="12" fill="#FFFFFF" stroke="#F59E0B" stroke-width="2"/>
+    <rect x="0" y="0" width="8" height="102" rx="4" fill="#D97706"/>
+    <rect x="20" y="22" width="42" height="42" rx="9" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1.2"/>
+    <rect x="30" y="31" width="22" height="24" rx="3" stroke="#D97706" stroke-width="2" fill="none"/>
+    <line x1="35" y1="38" x2="47" y2="38" stroke="#D97706" stroke-width="2" stroke-linecap="round"/>
+    <line x1="35" y1="44" x2="47" y2="44" stroke="#D97706" stroke-width="2" stroke-linecap="round"/>
+    <line x1="35" y1="50" x2="43" y2="50" stroke="#D97706" stroke-width="2" stroke-linecap="round"/>
+    <rect x="74" y="16" width="38" height="20" rx="5" fill="#FEF3C7" stroke="#FCD34D" stroke-width="1"/>
+    <text x="93" y="30" text-anchor="middle" fill="#B45309" font-size="11" font-weight="800" class="font-mono">WA</text>
+    <rect x="120" y="16" width="116" height="20" rx="5" fill="#F1F5F9"/>
+    <text x="178" y="30" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="600">Application Layer</text>
+    <text x="74" y="58" fill="#0F172A" font-size="15.5" font-weight="800">Workflows.Application</text>
+    <text x="74" y="80" fill="#64748B" font-size="11" font-weight="500" class="font-mono">in: API, WRK, SCH, WI • out: WC, SK, SC</text>
+  </g>
+
+  <!-- NODE 12: WC [Workflows.Core] -->
+  <g id="node-WC" class="node-card" transform="translate(1030, 824)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="350" height="120" rx="12" fill="#FFFFFF" stroke="#D97706" stroke-width="2.4"/>
+    <rect x="0" y="0" width="8" height="120" rx="4" fill="#B45309"/>
+    <rect x="20" y="24" width="42" height="42" rx="9" fill="#FEF3C7" stroke="#FCD34D" stroke-width="1.2"/>
+    <circle cx="33" cy="36" r="3.5" stroke="#B45309" stroke-width="1.8" fill="none"/>
+    <circle cx="49" cy="36" r="3.5" stroke="#B45309" stroke-width="1.8" fill="none"/>
+    <circle cx="41" cy="52" r="3.5" stroke="#B45309" stroke-width="1.8" fill="none"/>
+    <path d="M 35 39 L 39 49 M 47 39 L 43 49" stroke="#B45309" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="74" y="16" width="38" height="20" rx="5" fill="#D97706"/>
+    <text x="93" y="30" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="800" class="font-mono">WC</text>
+    <rect x="120" y="16" width="96" height="20" rx="5" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1"/>
+    <text x="168" y="30" text-anchor="middle" fill="#B45309" font-size="10.5" font-weight="700">Domain Core</text>
+    <text x="74" y="60" fill="#0F172A" font-size="16" font-weight="800">Workflows.Core</text>
+    <text x="74" y="84" fill="#B45309" font-size="11.5" font-weight="600">Core Workflow Engine &amp; Aggregates</text>
+    <text x="74" y="106" fill="#64748B" font-size="11" font-weight="500" class="font-mono">in: WI, WA, INFRA • out: SK</text>
+  </g>
+
+
+  <!-- SUBGRAPH 5: INFRASTRUCTURE LAYER (1 NODE) -->
+
+  <!-- NODE 13: INFRA ["WorkflowAutomation.Infrastructure<br/>(ApplicationDbContext : IdentityDbContext)"] -->
+  <g id="node-INFRA" class="node-card" transform="translate(1477, 520)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="321" height="160" rx="12" fill="#FFFFFF" stroke="#9333EA" stroke-width="2.4"/>
+    <rect x="0" y="0" width="8" height="160" rx="4" fill="#7E22CE"/>
+    <rect x="20" y="20" width="42" height="42" rx="9" fill="#FAF5FF" stroke="#E9D5FF" stroke-width="1.2"/>
+    <ellipse cx="41" cy="32" rx="11" ry="4.5" stroke="#7E22CE" stroke-width="1.9" fill="none"/>
+    <path d="M 30 32 L 30 49 C 30 51.5 35 53.5 41 53.5 C 47 53.5 52 51.5 52 49 L 52 32" stroke="#7E22CE" stroke-width="1.9" fill="none"/>
+    <path d="M 30 40.5 C 30 43 35 45 41 45 C 47 45 52 43 52 40.5" stroke="#7E22CE" stroke-width="1.9" fill="none"/>
+    <rect x="72" y="18" width="58" height="20" rx="5" fill="#9333EA"/>
+    <text x="101" y="32" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="800" class="font-mono">INFRA</text>
+    <rect x="138" y="18" width="166" height="20" rx="5" fill="#FAF5FF" stroke="#E9D5FF" stroke-width="1"/>
+    <text x="221" y="32" text-anchor="middle" fill="#6B21A8" font-size="10" font-weight="700">6 In • 4 Out (Persistence)</text>
+    <text x="20" y="82" fill="#0F172A" font-size="15" font-weight="800">WorkflowAutomation.Infrastructure</text>
+    <rect x="20" y="92" width="284" height="34" rx="6" fill="#FAF5FF" stroke="#D8B4FE" stroke-width="1"/>
+    <text x="28" y="107" fill="#6B21A8" font-size="10.2" font-weight="600" class="font-mono">(ApplicationDbContext :</text>
+    <text x="28" y="120" fill="#6B21A8" font-size="10.2" font-weight="600" class="font-mono"> IdentityDbContext)</text>
+    <text x="20" y="146" fill="#64748B" font-size="10.8" font-weight="500" class="font-mono">in: API,WRK,SCH,II,WSI,WI &#8594; IC,WSC,WC,SK</text>
+  </g>
+
+
+  <!-- SUBGRAPH 6: SHARED (2 NODES) -->
+
+  <!-- NODE 14: SC [Shared.Contracts] -->
+  <g id="node-SC" class="node-card" transform="translate(1135, 1142)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="450" height="104" rx="12" fill="#FFFFFF" stroke="#F43F5E" stroke-width="2.2"/>
+    <rect x="0" y="0" width="8" height="104" rx="4" fill="#E11D48"/>
+    <rect x="22" y="22" width="44" height="44" rx="10" fill="#FFF1F2" stroke="#FECDD3" stroke-width="1.2"/>
+    <path d="M 34 33 L 54 33 L 54 55 L 34 55 Z" stroke="#E11D48" stroke-width="2" fill="none" stroke-linejoin="round"/>
+    <path d="M 39 40 L 49 40 M 39 46 L 46 46" stroke="#E11D48" stroke-width="2" stroke-linecap="round"/>
+    <rect x="80" y="16" width="40" height="20" rx="5" fill="#FFE4E6" stroke="#FDA4AF" stroke-width="1"/>
+    <text x="100" y="30" text-anchor="middle" fill="#BE123C" font-size="11" font-weight="800" class="font-mono">SC</text>
+    <rect x="128" y="16" width="150" height="20" rx="5" fill="#F1F5F9"/>
+    <text x="203" y="30" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="600">Integration &amp; DTO Contracts</text>
+    <rect x="348" y="16" width="84" height="20" rx="10" fill="#FFE4E6"/>
+    <text x="390" y="30" text-anchor="middle" fill="#E11D48" font-size="10" font-weight="700">4 in • 1 out</text>
+    <text x="80" y="58" fill="#0F172A" font-size="16" font-weight="800">Shared.Contracts</text>
+    <text x="80" y="81" fill="#64748B" font-size="11.5" font-weight="500" class="font-mono">in: API, WRK, SCH, WA • out: SK</text>
+  </g>
+
+  <!-- NODE 15: SK [SharedKernel] -->
+  <g id="node-SK" class="node-card" transform="translate(495, 1288)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="470" height="104" rx="12" fill="#FFFFFF" stroke="#E11D48" stroke-width="2.6"/>
+    <rect x="0" y="0" width="10" height="104" rx="4" fill="#BE123C"/>
+    <rect x="24" y="22" width="46" height="46" rx="10" fill="#FFE4E6" stroke="#FDA4AF" stroke-width="1.2"/>
+    <circle cx="47" cy="45" r="5" fill="#BE123C"/>
+    <circle cx="47" cy="45" r="5" fill="#BE123C" class="pulse-circle"/>
+    <ellipse cx="47" cy="45" rx="15" ry="6" stroke="#BE123C" stroke-width="1.8" fill="none" transform="rotate(30 47 45)"/>
+    <ellipse cx="47" cy="45" rx="15" ry="6" stroke="#BE123C" stroke-width="1.8" fill="none" transform="rotate(-30 47 45)"/>
+    <rect x="84" y="16" width="40" height="20" rx="5" fill="#BE123C"/>
+    <text x="104" y="30" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="800" class="font-mono">SK</text>
+    <rect x="132" y="16" width="175" height="20" rx="5" fill="#FFF1F2" stroke="#FECDD3" stroke-width="1"/>
+    <text x="219" y="30" text-anchor="middle" fill="#BE123C" font-size="10.5" font-weight="700">Foundational Domain Kernel</text>
+    <rect x="352" y="16" width="100" height="20" rx="10" fill="#FFE4E6"/>
+    <text x="402" y="30" text-anchor="middle" fill="#BE123C" font-size="10" font-weight="800">8 incoming • 0 out</text>
+    <text x="84" y="58" fill="#0F172A" font-size="17" font-weight="800">SharedKernel</text>
+    <text x="84" y="81" fill="#64748B" font-size="11.5" font-weight="500" class="font-mono">in: IA, IC, WSA, WSC, WA, WC, INFRA, SC (Leaf Sink)</text>
+  </g>
+
+  <!-- Junction Dots on Key Bus Intersections -->
+  <g fill="#4F46E5">
+    <circle cx="210" cy="350" r="3.2"/>
+    <circle cx="250" cy="342" r="3.2"/>
+    <circle cx="285" cy="350" r="3.2"/>
+    <circle cx="320" cy="334" r="3.2"/>
+    <circle cx="355" cy="326" r="3.2"/>
+    <circle cx="390" cy="318" r="3.2"/>
+  </g>
+  <g fill="#0284C7">
+    <circle cx="805" cy="358" r="3.2"/>
+    <circle cx="890" cy="358" r="3.2"/>
+    <circle cx="930" cy="350" r="3.2"/>
+    <circle cx="970" cy="342" r="3.2"/>
+  </g>
+  <g fill="#7C3AED">
+    <circle cx="1450" cy="366" r="3.2"/>
+    <circle cx="1510" cy="358" r="3.2"/>
+    <circle cx="1765" cy="342" r="3.2"/>
+  </g>
+</svg>

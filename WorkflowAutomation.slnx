@@ -1,5 +1,8 @@
 <Solution>
   <Folder Name="/src/" />
+  <Folder Name="/src/Infrastructure/">
+    <Project Path="src/Infrastructure/WorkflowAutomation.Infrastructure/WorkflowAutomation.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/Identity/">
     <Project Path="src/Modules/Identity/WorkflowAutomation.Identity.Core/WorkflowAutomation.Identity.Core.csproj" />
@@ -15,6 +18,7 @@
     <Project Path="src/Shared/WorkflowAutomation.Shared.Kernel/WorkflowAutomation.Shared.Kernel.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/WorkflowAutomation.Integration.Tests/WorkflowAutomation.Integration.Tests.csproj" />
     <Project Path="tests/WorkflowAutomation.Workflows.Core.Tests/WorkflowAutomation.Workflows.Core.Tests.csproj" />
   </Folder>
 </Solution>

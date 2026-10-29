@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\WorkflowAutomation.Shared.Kernel\WorkflowAutomation.Shared.Kernel.csproj" />
+    <ProjectReference Include="..\..\Modules\Identity\WorkflowAutomation.Identity.Core\WorkflowAutomation.Identity.Core.csproj" />
+    <ProjectReference Include="..\..\Modules\Workspaces\WorkflowAutomation.Workspaces.Core\WorkflowAutomation.Workspaces.Core.csproj" />
+    <ProjectReference Include="..\..\Modules\Workflows\WorkflowAutomation.Workflows.Core\WorkflowAutomation.Workflows.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.13" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

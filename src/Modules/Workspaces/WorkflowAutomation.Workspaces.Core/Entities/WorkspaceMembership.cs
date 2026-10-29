@@ -2,7 +2,7 @@ namespace WorkflowAutomation.Workspaces.Core.Entities;
 
 using WorkflowAutomation.Shared.Kernel.Primitives;
 using WorkflowAutomation.Workspaces.Core.Enums;
-public sealed class WorkspaceMembership : AuditableEntity<Guid>
+public sealed class WorkspaceMembership : AuditableEntity<Guid>, IMustHaveWorkspace
 {
     public Guid WorkspaceId { get; private set; }
     public Guid UserId { get; private set; }

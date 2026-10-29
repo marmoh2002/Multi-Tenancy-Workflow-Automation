@@ -1,6 +1,6 @@
 # Multi-Tenant Workflow Automation Platform
 
-A .NET 10 modular monolith where workspaces create **DAG-based workflows** that execute asynchronously through RabbitMQ-driven background workers. Workflows are triggered by **webhooks**, **cron schedules**, or **manual execution**.
+A .NET 10 modular monolith where workspaces create *DAG-based workflows* that execute asynchronously through RabbitMQ-driven background workers. Workflows are triggered by *webhooks*, *cron schedules*, or *manual execution*.
 
 ---
 
@@ -19,7 +19,7 @@ A .NET 10 modular monolith where workspaces create **DAG-based workflows** that 
 
 ## Architecture Overview
 
-The platform is a **modular monolith** with three separate runtime hosts sharing a single PostgreSQL database. Modules communicate through **message contracts** over RabbitMQ via MassTransit. Workspace isolation is enforced at every layer through EF Core global query filters and per-request workspace context resolution.
+The platform is a *modular monolith* with three separate runtime hosts sharing a single PostgreSQL database. Modules communicate through *message contracts* over RabbitMQ via MassTransit. Workspace isolation is enforced at every layer through EF Core global query filters and per-request workspace context resolution.
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -57,17 +57,17 @@ The platform is a **modular monolith** with three separate runtime hosts sharing
 
 | Host | Type | Responsibility |
 |:---|:---|:---|
-| **API** | ASP.NET Core Web API | HTTP endpoints, JWT authentication, workspace resolution middleware, Bus Outbox publishing |
-| **Worker** | .NET Worker Service | MassTransit consumers, saga state machine, step executors, Consumer Outbox with inbox deduplication |
-| **Scheduler** | .NET Worker Service | Quartz.NET cron evaluation, deterministic occurrence identity, Bus Outbox publishing |
+| *API* | ASP.NET Core Web API | HTTP endpoints, JWT authentication, workspace resolution middleware, Bus Outbox publishing |
+| *Worker* | .NET Worker Service | MassTransit consumers, saga state machine, step executors, Consumer Outbox with inbox deduplication |
+| *Scheduler* | .NET Worker Service | Quartz.NET cron evaluation, deterministic occurrence identity, Bus Outbox publishing |
 
 ### Three Modules
 
 | Module | Owns | Key Entities |
 |:---|:---|:---|
-| **Identity** | User accounts, authentication, JWT tokens | `ApplicationUser`, `ApplicationRole` |
-| **Workspaces** | Workspace lifecycle, membership, connections | `Workspace`, `WorkspaceMembership`, `WorkspaceConnection` |
-| **Workflows** | Workflow definitions, versioning, execution, DAG validation | `Workflow`, `WorkflowVersion`, `WorkflowExecution`, `WorkflowStepExecution` |
+| *Identity* | User accounts, authentication, JWT tokens | `ApplicationUser`, `ApplicationRole` |
+| *Workspaces* | Workspace lifecycle, membership, connections | `Workspace`, `WorkspaceMembership`, `WorkspaceConnection` |
+| *Workflows* | Workflow definitions, versioning, execution, DAG validation | `Workflow`, `WorkflowVersion`, `WorkflowExecution`, `WorkflowStepExecution` |
 
 ---
 
@@ -75,50 +75,60 @@ The platform is a **modular monolith** with three separate runtime hosts sharing
 
 | Layer | Technology |
 |:---|:---|
-| **Runtime** | .NET 10 / C# |
-| **Database** | PostgreSQL 15 (via Docker) |
-| **Messaging** | RabbitMQ + MassTransit 8 |
-| **Scheduling** | Quartz.NET |
-| **ORM** | Entity Framework Core |
-| **Authentication** | ASP.NET Core Identity + JWT Bearer |
-| **Testing** | xUnit |
-| **Containerization** | Docker / Docker Compose |
+| *Runtime* | .NET 10 / C# |
+| *Database* | PostgreSQL 15 (via Docker) |
+| *Messaging* | RabbitMQ + MassTransit 8 |
+| *Scheduling* | Quartz.NET |
+| *ORM* | Entity Framework Core |
+| *Authentication* | ASP.NET Core Identity + JWT Bearer |
+| *Testing* | xUnit |
+| *Containerization* | Docker / Docker Compose |
 
 ---
 
 ## Project Structure
 
-The target solution structure follows a modular monolith layout. Migration from the current `DagWorkflow` namespace to `WorkflowAutomation` is planned for Phase 1.
+The platform follows a *modular monolith* layout with clear module and host boundaries. Phase 1 migration from `DagWorkflow` to `WorkflowAutomation` is complete.
 
+---
+## Request Flow Overview
+
+![Diagram](./imgs/Request-flow-simple.svg)
+
+---
 ### Current State
 
 ```
-Multi-Tenancy-Workflow-Automation/
-├── DagWorkflow.slnx                    # Current solution file
-├── docker-compose.yml                  # PostgreSQL 15
+WorkflowAutomation.slnx
+├── src/
+│   ├── Shared/
+│   │   ├── WorkflowAutomation.Shared.Kernel/          # Primitives, Result<T>, Error, IClock, IWorkspaceContext, IMustHaveWorkspace (0 deps)
+│   │   └── WorkflowAutomation.Shared.Contracts/       # Pure C# message contracts (Execution.Commands, Execution.Events)
+│   │
+│   ├── Infrastructure/
+│   │   └── WorkflowAutomation.Infrastructure/         # ApplicationDbContext, Global Query Filters, Entity Configurations, DI registration
+│   │
+│   └── Modules/
+│       ├── Identity/
+│       │   └── WorkflowAutomation.Identity.Core/      # ApplicationUser : IdentityUser<Guid>, ApplicationRole
+│       ├── Workspaces/
+│       │   └── WorkflowAutomation.Workspaces.Core/    # Workspace, WorkspaceMembership, WorkspaceConnection, Enums
+│       └── Workflows/
+│           └── WorkflowAutomation.Workflows.Core/     # KahnDagValidator, Workflow models, DAG validation
 │
-├── DagWorkflow.Core/                   # Pure domain library (net10.0, zero deps)
-│   ├── Definitions/
-│   │   ├── WorkflowDefinition.cs       # Workflow with IReadOnlyList<StepDefinition>
-│   │   └── StepDefinition.cs           # Id, Type, DependsOn, Parameters
-│   ├── DagValidationResult.cs          # IsValid, Errors, OrderedStepIds
-│   ├── IDagValidator.cs                # Validator interface
-│   ├── KahnDagValidator.cs             # Kahn's topological sort + cycle detection
-│   └── WorkflowExecutionContext.cs     # Runtime context shell
-│
-└── DagWorkflow.Core.Tests/             # xUnit (net10.0)
-    ├── DagValidatorTests.cs            # 8 passing tests
-    └── ReadOnlyListExtensions.cs       # Test helper
+└── tests/
+    ├── WorkflowAutomation.Workflows.Core.Tests/       # 8 passing xUnit DAG tests
+    └── WorkflowAutomation.Integration.Tests/          # 4 passing integration tests (Global Query Filters & DI Scoping)
 ```
 
 ### Target State
 
 ```
-WorkflowAutomation.sln
+WorkflowAutomation.slnx
 
 src/
 ├── Shared/
-│   ├── WorkflowAutomation.SharedKernel/               # Result<T>, Error, IClock, Entity base
+│   ├── WorkflowAutomation.Shared.Kernel/              # Result<T>, Error, IClock, Entity base, multi-tenancy interfaces
 │   └── WorkflowAutomation.Shared.Contracts/           # Pure C# message records (no MassTransit refs)
 │
 ├── Modules/
@@ -128,8 +138,8 @@ src/
 │   │   └── WorkflowAutomation.Identity.Infrastructure/ # JWT, Identity DI registration
 │   │
 │   ├── Workspaces/
-│   │   ├── WorkflowAutomation.Workspaces.Core/        # Workspace, WorkspaceMembership
-│   │   ├── WorkflowAutomation.Workspaces.Application/ # IWorkspaceService, IWorkspaceContext
+│   │   ├── WorkflowAutomation.Workspaces.Core/        # Workspace, WorkspaceMembership, WorkspaceConnection
+│   │   ├── WorkflowAutomation.Workspaces.Application/ # IWorkspaceService, IWorkspaceContext implementation
 │   │   └── WorkflowAutomation.Workspaces.Infrastructure/ # Workspace EF configs, middleware
 │   │
 │   └── Workflows/
@@ -154,46 +164,222 @@ tests/
 └── WorkflowAutomation.Integration.Tests/
 ```
 
+### Dependency Graph & Module Flow
+---
+![Diagram](./imgs/Dependency_Graph.svg)
+
+<details>
+<summary>View Mermaid Source Code</summary>
+
+```mermaid
+graph TD
+    subgraph Hosts
+        API[WorkflowAutomation.Api]
+        WRK[WorkflowAutomation.Worker]
+        SCH[WorkflowAutomation.Scheduler]
+    end
+
+    subgraph Infrastructure Layer
+        INFRA["WorkflowAutomation.Infrastructure<br/>(ApplicationDbContext : IdentityDbContext)"]
+    end
+
+    subgraph Identity Module
+        IC["Identity.Core<br/>(ApplicationUser, ApplicationRole)"]
+        IA[Identity.Application]
+        II[Identity.Infrastructure]
+    end
+
+    subgraph Workspaces Module
+        WSC["Workspaces.Core<br/>(Workspace, WorkspaceMembership, WorkspaceConnection)"]
+        WSA[Workspaces.Application]
+        WSI[Workspaces.Infrastructure]
+    end
+
+    subgraph Workflows Module
+        WC[Workflows.Core]
+        WA[Workflows.Application]
+        WI[Workflows.Infrastructure]
+    end
+
+    subgraph Shared
+        SK[SharedKernel]
+        SC[Shared.Contracts]
+    end
+
+    %% API composition root
+    API --> IA
+    API --> II
+    API --> WSA
+    API --> WSI
+    API --> WA
+    API --> WI
+    API --> INFRA
+    API --> SC
+
+    %% Worker composition root
+    WRK --> WA
+    WRK --> WSA
+    WRK --> WI
+    WRK --> INFRA
+    WRK --> SC
+
+    %% Scheduler composition root
+    SCH --> WA
+    SCH --> WSA
+    SCH --> INFRA
+    SCH --> SC
+
+    %% Identity module
+    II --> IA
+    II --> IC
+    II --> INFRA
+    IA --> IC
+    IA --> SK
+    IC --> SK
+
+    %% Workspaces module
+    WSI --> WSA
+    WSI --> WSC
+    WSI --> INFRA
+    WSA --> WSC
+    WSA --> SK
+    WSC --> SK
+
+    %% Workflows module
+    WI --> WA
+    WI --> WC
+    WI --> INFRA
+    WA --> WC
+    WA --> SK
+    WA --> SC
+    WC --> SK
+
+    %% Shared infrastructure maps entities from multiple modules
+    INFRA --> SK
+    INFRA --> IC
+    INFRA --> WSC
+    INFRA --> WC
+
+    %% Shared contracts
+    SC --> SK
+```
+
+</details>
+
 ### Key Dependency Rules
 
-- **SharedKernel**: Zero external NuGet dependencies. Pure .NET.
-- **Shared.Contracts**: Pure C# records. No MassTransit, EF Core, or ASP.NET references.
-- **Identity.Core → SharedKernel**: Only NuGet dependency is `Microsoft.Extensions.Identity.Stores` (lightweight, no EF).
-- **Infrastructure → Identity.Core**: `ApplicationDbContext` inherits `IdentityDbContext<ApplicationUser>` — needs the type, not the services.
-- **Cross-module references**: Use raw `Guid` foreign keys, never navigation properties between modules.
+- *Shared.Kernel (`WorkflowAutomation.Shared.Kernel`)*: Zero external NuGet dependencies. Pure .NET 10. The foundation that all Core and Application projects depend on.
+- *Shared.Contracts (`WorkflowAutomation.Shared.Contracts`)*: Pure C# message records (commands and events). References only `Shared.Kernel`. Zero third-party dependencies (no MassTransit, EF Core, or ASP.NET Core).
+- *Module Cores (`*.Core`)*: All module domain cores (`Identity.Core`, `Workspaces.Core`, `Workflows.Core`) depend strictly on `Shared.Kernel`. `Identity.Core` has a single lightweight NuGet dependency on `Microsoft.Extensions.Identity.Stores` (no EF Core).
+- *Infrastructure Layer (`WorkflowAutomation.Infrastructure`)*: Hosts the unified `ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>`. References `Shared.Kernel`, `Identity.Core`, `Workspaces.Core`, and `Workflows.Core` to map entity configurations across all modules without coupling to application or business logic.
+- *Module Application & Infrastructure Layers*:
+  - `*.Application` depends on its respective `*.Core` and `Shared.Kernel` (`Workflows.Application` also references `Shared.Contracts`).
+  - `*.Infrastructure` depends on its respective `*.Application`, `*.Core`, and `WorkflowAutomation.Infrastructure`.
+- *Host Composition Roots*:
+  - `WorkflowAutomation.Api`: References all module `Application` and `Infrastructure` layers (`IA`, `II`, `WSA`, `WSI`, `WA`, `WI`), `WorkflowAutomation.Infrastructure`, and `Shared.Contracts`.
+  - `WorkflowAutomation.Worker`: References `Workflows.Application`, `Workspaces.Application`, `Workflows.Infrastructure`, `WorkflowAutomation.Infrastructure`, and `Shared.Contracts`.
+  - `WorkflowAutomation.Scheduler`: References `Workflows.Application`, `Workspaces.Application`, `WorkflowAutomation.Infrastructure`, and `Shared.Contracts`.
+- *Cross-module decoupling*: Cross-module entity references use raw `Guid` foreign keys only; never Entity Framework navigation properties between modules.
+- *Strictly Acyclic Flow*: Every dependency path flows inward and terminates at `Shared.Kernel`. No circular references exist across modules or layers.
+---
+
+## Three Architectural Layers of Defense
+
+To achieve complete tenant isolation on writes, modern systems use a defense-in-depth approach across **three** layers:
+
+![Diagram](./imgs/TenantIsolationDefense.svg)
 
 ---
 
 ## What's Been Built
 
-### DAG Validator (`KahnDagValidator`)
+### 1. Shared Kernel (`WorkflowAutomation.Shared.Kernel`)
+<details> 
+<summary>details</summary>
+A foundational domain library with *0 external NuGet package dependencies* (pure .NET 10). Provides:
+- *Multi-Tenancy Scoping*: `IWorkspaceContext` and `WorkspaceContext` (thread-safe scoped context container with single-initialization invariant).
+- *Tenant Marker*: `IMustHaveWorkspace` marker interface for automated EF Core global query filtering.
+- *Domain Primitives*: `Entity<TId>`, `AuditableEntity<TId>`, and `IAuditableEntity` (`CreatedAt`, `UpdatedAt`).
+- *Result Pattern*: `Result`, `Result<TValue>`, `Error`, and `ErrorType` enum (`Failure`, `Validation`, `NotFound`, `Conflict`).
+- *Deterministic Time*: `IClock` and `SystemClock` for reliable unit testing.
+</details>
 
-The core algorithm powering workflow validation. Uses **Kahn's topological sort** to verify that a workflow's step graph is a valid DAG.
 
-**Validation pipeline:**
+*For complete class breakdowns and design details, see [src/Shared/WorkflowAutomation.Shared.Kernel/README.md](src/Shared/WorkflowAutomation.Shared.Kernel/README.md).*
 
-1. **Structural checks** — rejects empty or duplicate step IDs
-2. **Dependency reference checks** — every `DependsOn` entry must point to an existing step
-3. **Graph construction** — builds adjacency map and in-degree map
-4. **Queue-based BFS traversal** — processes nodes with `inDegree == 0`, decrements downstream counts
-5. **Cycle detection** — identifies stuck nodes if not all were visited
-6. **Topological ordering** — returns a valid execution order on success
+### 2. Shared Contracts (`WorkflowAutomation.Shared.Contracts`)
+<details>
+<summary>details</summary>
+Pure C# message contracts under `Execution.Commands` (`StartExecution`, `ExecuteStep`, `CancelStep`) and `Execution.Events` (`StepExecutionCompleted`, `StepExecutionFailed`, etc.) with `ExecutionSource`. Completely decoupled from MassTransit.
+</details>
 
-### Test Coverage
+### 3. Identity Module Domain (`WorkflowAutomation.Identity.Core`)
+<details>
+<summary>details</summary>
+- Domain user model: `ApplicationUser : IdentityUser<Guid>`
+- Domain role model: `ApplicationRole : IdentityRole<Guid>`
+</details>
 
-8 xUnit test cases covering:
+### 4. Workspaces Module Domain (`WorkflowAutomation.Workspaces.Core`)
+<details>
+<summary>details</summary>
+- *`Workspace` Aggregate Root*: Personal and Organization workspace types, explicit lifecycle management (`Active`, `Suspended`, `Archived`), and factory methods.
+- *`WorkspaceMembership` Entity*: Scoped role management (`Owner`, `Admin`, `Member`, `Viewer`) decoupled from Identity via raw `Guid UserId`. Implements `IMustHaveWorkspace`.
+- *`WorkspaceConnection` Entity*: Workspace-scoped external integration credentials boundary (`EncryptedCredentials`) keeping plaintext tokens out of workflow definitions. Implements `IMustHaveWorkspace`.
+- *Domain Enums*: `WorkspaceType`, `WorkspaceStatus`, `WorkspaceRole`.
+</details>
 
-| Test | Validates |
-|:---|:---|
-| `Empty_workflow_is_valid` | Zero-step workflow passes |
-| `Valid_chain_is_valid_and_returns_expected_order` | Linear A→B→C produces correct ordering |
-| `Valid_diamond_is_valid_and_respects_dependencies` | Fan-out/fan-in diamond respects all dependency constraints |
-| `Disconnected_nodes_are_valid` | Independent subgraphs are allowed |
-| `Single_node_is_valid` | Single-step workflow passes |
-| `Simple_cycle_is_invalid` | A↔B mutual dependency is rejected |
-| `Self_loop_is_invalid` | A→A self-reference is rejected |
-| `Unknown_dependency_is_invalid` | Reference to non-existent step is rejected |
+### 5. Workflows Module Domain (`WorkflowAutomation.Workflows.Core`)
+<details>
+<summary>details</summary>
+- *Kahn DAG Validator (`KahnDagValidator`)*: Validates acyclic structure and computes topological execution orders using BFS queue traversal.
+- *Domain Models*: `WorkflowDefinition`, `StepDefinition`, `WorkflowExecutionContext`, `DagValidationResult`.
+</details>
 
+### 6. Persistence & Multi-Tenancy Infrastructure (`WorkflowAutomation.Infrastructure`)
+
+<details>
+
+<summary>details</summary>
+- *`ApplicationDbContext`*: Unified EF Core context inheriting `IdentityDbContext<ApplicationUser, ApplicationRole, Guid>`. Maps Identity, Workspaces, and Workflows schemas.
+
+- *Fail-Closed Global Query Filters*:
+
+  - `Workspace` aggregate root filtered by `w.Id == _workspaceContext.CurrentWorkspaceId` (primary key is `Id`, not `WorkspaceId`).
+  - Workspace-owned entities (`WorkspaceMembership`, `WorkspaceConnection`) implementing `IMustHaveWorkspace` filtered by `e.WorkspaceId == _workspaceContext.CurrentWorkspaceId`.
+
+  - When context is missing (`CurrentWorkspaceId == null`), EF Core translates the comparison to SQL `NULL`, which evaluates to false and safely returns 0 rows.
+
+- *Entity Configurations*:
+
+  - `WorkspaceConfiguration`: Maps table, property constraints, and restricts user foreign key cascade.
+  - `WorkspaceMembershipConfiguration`: Composite primary key `(WorkspaceId, UserId)`, index on `UserId` for fast bootstrap resolution, `DeleteBehavior.Restrict`.
+
+  - `WorkspaceConnectionConfiguration`: Unique composite index `(WorkspaceId, Name)` enforcing unique connection names per workspace, `DeleteBehavior.Restrict`.
+
+- *Dependency Injection*:
+  - `AddInfrastructurePersistence(connectionString)` registers `WorkspaceContext` (Scoped), forwards `IWorkspaceContext` to the same instance within the scope, and registers `ApplicationDbContext` with Scoped, unpooled lifetime using Npgsql PostgreSQL provider.
+</details>
+
+> [!IMPORTANT]
+> *Tenant Isolation & Security Boundary Limits*:
+> 1. *Read-Side Protection*: EF Core Global Query Filters automatically scope all queries to the active `CurrentWorkspaceId` (or fail closed to 0 rows).
+> 2. *Write-Side Boundary*: Query filters do *not* inspect or protect write operations (`INSERT`, `UPDATE`, `DELETE`). Write-side isolation and cross-workspace reference checks must be strictly enforced in application services, aggregate invariants, and database foreign keys.
+
+### 7. Test Suites (`tests/`)
+<details> 
+
+<summary>details</summary>
+
+12 passing xUnit test cases across two test projects:
+- *`WorkflowAutomation.Workflows.Core.Tests` (8 tests)*:
+  - Empty workflows, linear dependency chains (A→B→C), diamond fan-out/fan-in graphs.
+  - Disconnected valid subgraphs and single-node graphs.
+  - Cyclic graphs, direct self-loops, and invalid/missing dependency references.
+- *`WorkflowAutomation.Integration.Tests` (4 tests)*:
+  - `GlobalQueryFilterTests`: Verifies fail-closed behavior (unauthenticated context yields 0 records) and cross-tenant isolation (Workspace A cannot see Workspace B data) on SQLite in-memory database.
+  - `DependencyInjectionLifetimeTests`: Verifies `WorkspaceContext` and `IWorkspaceContext` resolve to the exact same reference within a scope, and that distinct scopes remain completely isolated.
+</details>
 ---
 
 ## Getting Started
@@ -211,14 +397,14 @@ docker compose up -d
 ```
 
 This starts PostgreSQL on `localhost:5432` with:
-- **User:** `postgres`
-- **Password:** `password`
-- **Database:** `multi_tenancy_db`
+- *User:* `postgres`
+- *Password:* `password`
+- *Database:* `multi_tenancy_db`
 
 ### Build
 
 ```bash
-dotnet build DagWorkflow.slnx
+dotnet build WorkflowAutomation.slnx
 ```
 
 ---
@@ -226,48 +412,60 @@ dotnet build DagWorkflow.slnx
 ## Running Tests
 
 ```bash
-dotnet test DagWorkflow.slnx
+dotnet test WorkflowAutomation.slnx
 ```
 
-All 8 DAG validation tests should pass.
+All *12 tests* (8 DAG validation unit tests + 4 integration tests) should pass:
+- `WorkflowAutomation.Workflows.Core.Tests`: 8 passed
+- `WorkflowAutomation.Integration.Tests`: 4 passed
 
 ---
 
-## Design Decisions
+## Design Decisions: Problems Encountered & Solutions Chosen
 
-| Decision | Choice | Rationale |
-|:---|:---|:---|
-| **Workspace as primary scope** | `Workspace` (not `Tenant`) | Unified concept for personal and organization contexts. Each workflow belongs to exactly one workspace. |
-| **Workflow versioning** | Immutable `WorkflowVersion` with serialized definition | Executions are pinned to the exact version used at trigger time. Published versions cannot be modified. |
-| **Compensation** | Deferred to future phase | No compensation machinery in Phase 1. Failed steps block dependents; completed side effects are not auto-reversed. Compensation remains a planned future capability (Phase 10). |
-| **Parallel branch failure** | Fail-fast | Stop scheduling new steps. Request cancellation of in-flight work. Wait for settlement before marking execution as failed. |
-| **Distributed cancellation** | Shared cancellation state in PostgreSQL | Three-layer design: (1) `WorkflowStepExecution.CancellationRequestedAt` in PostgreSQL as durable source of truth with conditional UPDATE guard, (2) `CancelWorkflowStep` via RabbitMQ as low-latency notification hint (not sole record), (3) worker-local `ConcurrentDictionary<(Guid, string), CancellationTokenSource>` for in-process signalling. Worker crash recovery via MassTransit message redelivery + step executor idempotency keys. Conditional UPDATE guards on both cancellation requests and terminal status transitions enforce at-most-once semantics. Cancellation request ≠ operation cancelled — only the owning Worker determines the actual outcome. |
-| **Authentication** | ASP.NET Core Identity + custom JWT token service | Standard JWT validation (signature, issuer, audience, expiration). Token carries user identity only — workspace role is resolved per-request from membership. |
-| **Transactional outbox** | MassTransit EF Core Outbox | API/Scheduler use Bus Outbox; Worker uses Consumer Outbox with inbox deduplication. |
-| **Saga concurrency** | PostgreSQL `xmin` optimistic concurrency | No separate saga DbContext. Saga state table uses PostgreSQL's internal `xmin` column as row version. |
-| **Single database context** | Shared `ApplicationDbContext : IdentityDbContext` | One context for Identity, Workspaces, Workflows, saga state, and outbox tables. Single PostgreSQL database. |
-| **Cross-module data access** | Raw `Guid` foreign keys | No navigation properties between modules. Cross-module queries go through application-layer interfaces. |
-| **Message contracts** | Pure C# records in `Shared.Contracts` with `Execution.Commands` and `Execution.Events` namespaces | No MassTransit references. Saga correlation configured via `CorrelateById()` in the state machine. |
+### Implemented Decisions
+
+| Area / Decision | Problem Encountered | Solution Proposed / Chosen | Architectural Rationale & Trade-offs |
+|:---|:---|:---|:---|
+| *Multi-Tenancy Query Isolation* | In a shared-database multi-tenant platform, relying on developers to write `.Where(x => x.WorkspaceId == ...)` on every query causes accidental cross-tenant data leaks. Root `Workspace` cannot have a foreign `WorkspaceId` filter. | Introduced `IMustHaveWorkspace` marker interface and `IWorkspaceContext`. In `ApplicationDbContext`, EF Core applies *Global Query Filters* automatically (`WHERE "WorkspaceId" = @CurrentWorkspaceId`) to all `IMustHaveWorkspace` entities and matches `w.Id` for the `Workspace` root. | Eliminates human error on read queries. Root `Workspace` aggregate intentionally omits the marker interface to prevent self-filtering conflicts. *Note: Global query filters only protect reads; write operations require explicit validation in application services and domain models.* |
+| *Host-Agnostic Context Resolution* | Context (workspace and user identity) must be resolved across 3 distinct runtime hosts (API HTTP requests, Worker queue consumers, Scheduler cron jobs). Coupling context to `HttpContext` breaks non-web worker hosts. | Abstracted `IWorkspaceContext` in `Shared.Kernel`. Each host provides its own scoped implementation: API from JWT/header, Worker from message headers, Scheduler from job metadata. | Zero web dependencies in domain, persistence, or worker processes. Context is transparently available everywhere. |
+| *Zero-Dependency Shared Kernel* | Shared libraries frequently become bloated "junk drawers" coupling modules through heavy third-party packages (EF Core, MassTransit, MediatR). | Enforced strict rule: *0 NuGet package dependencies* in `WorkflowAutomation.Shared.Kernel` (pure .NET 10). | Modules depend only on pure domain contracts and primitives without transitive package lock-in or version conflicts. |
+| *Cross-Module Decoupling* | Entity Framework navigation properties across module boundaries (e.g., `WorkspaceMembership` referencing `ApplicationUser`) tightly couple database schemas and cause circular dependencies. | Cross-module relationships use raw `Guid` foreign keys only (e.g. `WorkspaceMembership.UserId` is a raw `Guid`). Cross-module interaction happens via contracts or application service interfaces. | Modules remain truly independent and can be refactored, split, or extracted into microservices without cascading schema breakage. |
+| *Secret Isolation in Workflows* | Workflow DAG definitions are serialized, versioned, exported, and logged. Embedding plaintext integration tokens in step definitions leaks secrets. | `WorkspaceConnection` entity stores `EncryptedCredentials` scoped per workspace. Steps store only an opaque `ConnectionId`. | Workers resolve and decrypt credentials securely in-memory just-in-time during step execution; definitions stay clean of secrets. |
+| *Error Handling & Control Flow* | Throwing C# exceptions for expected domain failures (validation errors, conflicts, state violations) degrades performance and conceals execution paths. | Functional Result Pattern via `Result`, `Result<TValue>`, `Error`, and `ErrorType` enum (`Failure`, `Validation`, `NotFound`, `Conflict`). | Explicit type-safe railway-oriented flow; straightforward mapping to HTTP status codes (400, 404, 409). |
+| *Deterministic Time Abstraction* | Calling `DateTime.UtcNow` directly creates non-deterministic domain logic, making time-sensitive unit tests (expiry, locks, intervals) difficult to write and flaky. | `IClock` abstraction with default `SystemClock` for production and mockable implementations for tests. | Reliable, deterministic unit tests for time-critical workflows. |
+| *Unified Database Context* | Managing separate DbContexts across modules requires distributed 2-phase commit transactions or leads to transaction fragmentation. | Single unified `ApplicationDbContext : IdentityDbContext` in `WorkflowAutomation.Infrastructure` sharing a single PostgreSQL database. | True ACID transactions across aggregates within the modular monolith. |
+
+<details>
+<summary>Planned Architectural Decisions (Phases 3–7)</summary>
+
+| Area / Decision | Problem Encountered | Solution Proposed / Chosen | Architectural Rationale & Trade-offs |
+|:---|:---|:---|:---|
+| *Workflow Versioning* | Modifying an active workflow definition while executions are running causes non-deterministic behavior and broken state transitions. | Immutable `WorkflowVersion` entities with serialized definitions. Executions are strictly pinned to the version active at trigger time. | Guarantees auditability and determinism: in-flight executions never change behavior mid-run. |
+| *Parallel Branch Failure* | In a parallel DAG, if one branch fails, continuing other branches wastes compute and risks running invalid downstream side effects. | Fail-fast saga orchestration. Saga stops dispatching new steps and requests cancellation of in-flight work. | Resource efficiency and consistency; waits for in-flight work to settle before marking execution failed. |
+| *Distributed Three-Layer Cancellation* | Race conditions between step completion and cancellation; worker crashes during cancellation. | Three-tier architecture: (1) DB column `CancellationRequestedAt` with conditional UPDATE guard, (2) RabbitMQ broadcast as low-latency hint, (3) Worker-local `ConcurrentDictionary` tokens. | Resilient, at-most-once cancellation with durable recovery upon worker restart. |
+| *Transactional Outbox & Inbox* | Dual-write hazard: database state commits but RabbitMQ message publish fails (or vice versa), leading to lost or duplicated steps. | MassTransit EF Core Outbox: Bus Outbox for API and Scheduler; Consumer Outbox with inbox deduplication for Worker. | Atomic database transactions and guaranteed at-least-once message delivery without message loss. |
+| *Saga Concurrency* | Concurrent worker updates to the execution saga state machine cause lost updates or lock contention. | PostgreSQL `xmin` system column used for optimistic concurrency in `WorkflowExecutionSaga`. | High throughput without heavy distributed locks or dedicated saga database contexts. |
+
+</details>
+
+*For the complete technical analysis, sequence diagrams, and concurrency proofs of these planned phases, see [design_review.md](../design_review.md).*
 
 ---
 
 ## Implementation Roadmap
 
-| Phase | Milestone | Key Deliverables |
-|:---|:---|:---|
-| **1** | **Solution Structure & Core Migration** | Create `WorkflowAutomation.sln`. Establish all projects and dependency graph. Migrate `DagWorkflow.Core` → `Workflows.Core`. Verify 8 tests pass. |
-| **2** | **Identity, Workspaces & Multi-Tenancy** | `ApplicationUser`, `Workspace`, `WorkspaceMembership`. `ApplicationDbContext`. EF configurations. Global query filters. |
-| **3** | **Workflow & Version Persistence** | `Workflow`, `WorkflowVersion` (immutable definitions), `WorkflowExecution`, `WorkflowStepExecution` (including `CancellationRequestedAt` and `CancellationReason` columns). EF migrations. |
-| **4** | **API Idempotency & Bus Outbox** | `IdempotencyRecord`. API-side Bus Outbox. Execution creation transaction with deduplication. |
-| **5** | **Saga & Fail-Fast Orchestration** | `WorkflowExecutionSaga`. `IWorkflowEngine` DAG step selector. Fail-fast cancellation and settling logic. Conditional UPDATE guard for `CancellationRequestedAt` (`WHERE Status = 'Running' AND CancellationRequestedAt IS NULL`). Step-state guard prevents double-decrement of `ActiveRunningStepsCount`. |
-| **6** | **Worker Host & Step Executors** | MassTransit worker host. Consumer Outbox. `IStepExecutor` interface. `LogStepExecutor`, `HttpStepExecutor`. Step executor idempotency keys (`{ExecutionId}:{StepId}:{AttemptNumber}`) for crash recovery. Conditional UPDATE for terminal status (`WHERE Status = 'Running'`). Two-path cancellation discovery: worker-local `ConcurrentDictionary` + DB polling. Double-check pattern. |
-| **7** | **Scheduler Host & Quartz.NET** | Quartz.NET scheduled jobs. Deterministic occurrence identity. Misfire policies. |
-| **8** | **API Endpoints & JWT Security** | ASP.NET Core API host. JWT bearer auth. Workspace middleware. Workflow and execution endpoints. |
-| **9** | **Integration Testing** | Testcontainers (PostgreSQL + RabbitMQ). Concurrency, fail-fast, crash recovery (MassTransit redelivery, idempotent executor replay), conditional UPDATE guards, concurrent cancellation/completion, Consumer Outbox atomicity, and workspace isolation tests. |
-| **10** | **Compensation & Rollback (Future)** | Compensating actions, `Compensating` saga state, compensation commands/events, reverse-dependency execution order, compensation retry policies. |
-
+| Phase | Milestone | Status | Key Deliverables |
+|:---|:---|:---:|:---|
+| *1* | *Solution Structure & Core Migration* | ✅ Complete | Created `WorkflowAutomation.slnx`. Established `Shared.Kernel`, `Shared.Contracts`, `Workflows.Core`, `Identity.Core`, and `Workspaces.Core`. Verified all 8 unit tests pass. |
+| *2* | *Identity, Workspaces & Multi-Tenancy Persistence* | 🟡 In Progress | `ApplicationDbContext` in `WorkflowAutomation.Infrastructure`, EF entity configurations (Workspace, Membership, Connection), Global Query Filters, DI registration, and passing integration tests. (EF migrations pending). |
+| *3* | *Workflow & Version Persistence* | ⚪ Planned | `Workflow`, `WorkflowVersion` (immutable definitions), `WorkflowExecution`, `WorkflowStepExecution` (including `CancellationRequestedAt` and `CancellationReason` columns). |
+| *4* | *API Idempotency & Bus Outbox* | ⚪ Planned | `IdempotencyRecord`. API-side Bus Outbox. Execution creation transaction with deduplication. |
+| *5* | *Saga & Fail-Fast Orchestration* | ⚪ Planned | `WorkflowExecutionSaga`. `IWorkflowEngine` DAG step selector. Fail-fast cancellation and settling logic. Conditional UPDATE guard for `CancellationRequestedAt`. |
+| *6* | *Worker Host & Step Executors* | ⚪ Planned | MassTransit worker host. Consumer Outbox. `IStepExecutor` interface. `LogStepExecutor`, `HttpStepExecutor`. Step executor idempotency keys (`{ExecutionId}:{StepId}:{AttemptNumber}`). |
+| *7* | *Scheduler Host & Quartz.NET* | ⚪ Planned | Quartz.NET scheduled jobs. Deterministic occurrence identity. Misfire policies. |
+| *8* | *API Endpoints & JWT Security* | ⚪ Planned | ASP.NET Core API host. JWT bearer auth. Workspace middleware. Workflow and execution endpoints. |
+| *9* | *Integration Testing* | ⚪ Planned | Testcontainers (PostgreSQL + RabbitMQ). Concurrency, fail-fast, crash recovery, conditional UPDATE guards, Consumer Outbox atomicity, and workspace isolation tests. |
+| *10* | *Compensation & Rollback (Future)* | ⚪ Planned | Compensating actions, `Compensating` saga state, compensation commands/events, reverse-dependency execution order, compensation retry policies. |
 ---
 
-## License
-
-*TBD*
