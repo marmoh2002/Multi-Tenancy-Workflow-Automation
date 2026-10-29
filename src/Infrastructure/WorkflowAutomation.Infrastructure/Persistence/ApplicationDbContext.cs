@@ -43,12 +43,6 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser, A
         // 2. Automatically applies all IEntityTypeConfiguration classes from this assembly
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
-        // 2. Global Query Filters
-
-        builder.Entity<Workspace>()
-            .HasQueryFilter(w => w.Id == _workspaceContext.CurrentWorkspaceId);
-
-
         // Automatically apply workspace isolation filter to all IMustHaveWorkspace entities
         ApplyWorkspaceFilters(builder); // our extension method
 

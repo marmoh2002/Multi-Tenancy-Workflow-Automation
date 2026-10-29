@@ -341,7 +341,7 @@ Pure C# message contracts under `Execution.Commands` (`StartExecution`, `Execute
 <details>
 
 <summary>details</summary>
-- *`ApplicationDbContext`*: Unified EF Core context inheriting `IdentityDbContext<ApplicationUser, ApplicationRole, Guid>`. Maps Identity, Workspaces, and Workflows schemas.
+- *`ApplicationDbContext`*: Unified EF Core context inheriting `IdentityDbContext<ApplicationUser, ApplicationRole, Guid>`. Maps the Identity and Workspaces schemas; Workflows mappings arrive in Phase 3.
 
 - *Fail-Closed Global Query Filters*:
 
@@ -359,6 +359,8 @@ Pure C# message contracts under `Execution.Commands` (`StartExecution`, `Execute
 
 - *Dependency Injection*:
   - `AddInfrastructurePersistence(connectionString)` registers `WorkspaceContext` (Scoped), forwards `IWorkspaceContext` to the same instance within the scope, and registers `ApplicationDbContext` with Scoped, unpooled lifetime using Npgsql PostgreSQL provider.
+- *EF Migrations*:
+  - `InitialIdentityAndWorkspaces` creates the ASP.NET Core Identity tables plus `Workspaces`, `WorkspaceMemberships`, and `WorkspaceConnections`, including their indexes and restrict-delete foreign keys. Integration tests apply this migration through `MigrateAsync`.
 </details>
 
 > [!IMPORTANT]
@@ -371,14 +373,15 @@ Pure C# message contracts under `Execution.Commands` (`StartExecution`, `Execute
 
 <summary>details</summary>
 
-12 passing xUnit test cases across two test projects:
+22 passing xUnit test cases across two test projects:
 - *`WorkflowAutomation.Workflows.Core.Tests` (8 tests)*:
   - Empty workflows, linear dependency chains (A→B→C), diamond fan-out/fan-in graphs.
   - Disconnected valid subgraphs and single-node graphs.
   - Cyclic graphs, direct self-loops, and invalid/missing dependency references.
-- *`WorkflowAutomation.Integration.Tests` (4 tests)*:
-  - `GlobalQueryFilterTests`: Verifies fail-closed behavior (unauthenticated context yields 0 records) and cross-tenant isolation (Workspace A cannot see Workspace B data) on SQLite in-memory database.
-  - `DependencyInjectionLifetimeTests`: Verifies `WorkspaceContext` and `IWorkspaceContext` resolve to the exact same reference within a scope, and that distinct scopes remain completely isolated.
+- *`WorkflowAutomation.Integration.Tests` (14 tests)*:
+  - `GlobalQueryFilterTests` (3 tests): Verifies fail-closed behavior (unauthenticated context yields 0 records), cross-tenant isolation (Workspace A cannot see Workspace B data), and the controlled `IgnoreQueryFilters` bootstrap path on SQLite in-memory.
+  - `TenantWriteValidationInterceptorTests` (9 tests): Verifies write-side isolation on PostgreSQL via Testcontainers, including matching-workspace writes, cross-workspace inserts, updates, and deletes, missing workspace context, synchronous and asynchronous `SaveChanges` paths, and scope isolation.
+  - `DependencyInjectionLifetimeTests` (2 tests): Verifies `WorkspaceContext` and `IWorkspaceContext` resolve to the exact same reference within a scope, and that distinct scopes remain completely isolated.
 </details>
 ---
 
@@ -415,9 +418,11 @@ dotnet build WorkflowAutomation.slnx
 dotnet test WorkflowAutomation.slnx
 ```
 
-All *12 tests* (8 DAG validation unit tests + 4 integration tests) should pass:
+All *22 tests* (8 DAG validation unit tests + 14 integration tests) should pass:
 - `WorkflowAutomation.Workflows.Core.Tests`: 8 passed
-- `WorkflowAutomation.Integration.Tests`: 4 passed
+- `WorkflowAutomation.Integration.Tests`: 14 passed
+
+The integration suite requires Docker because `TenantWriteValidationInterceptorTests` starts a disposable PostgreSQL container through Testcontainers.
 
 ---
 
@@ -458,7 +463,7 @@ All *12 tests* (8 DAG validation unit tests + 4 integration tests) should pass:
 | Phase | Milestone | Status | Key Deliverables |
 |:---|:---|:---:|:---|
 | *1* | *Solution Structure & Core Migration* | ✅ Complete | Created `WorkflowAutomation.slnx`. Established `Shared.Kernel`, `Shared.Contracts`, `Workflows.Core`, `Identity.Core`, and `Workspaces.Core`. Verified all 8 unit tests pass. |
-| *2* | *Identity, Workspaces & Multi-Tenancy Persistence* | 🟡 In Progress | `ApplicationDbContext` in `WorkflowAutomation.Infrastructure`, EF entity configurations (Workspace, Membership, Connection), Global Query Filters, DI registration, and passing integration tests. (EF migrations pending). |
+| *2* | *Identity, Workspaces & Multi-Tenancy Persistence* | ✅ Complete | `ApplicationDbContext` in `WorkflowAutomation.Infrastructure`, EF entity configurations (Workspace, Membership, Connection), Global Query Filters, DI registration, `InitialIdentityAndWorkspaces` migration, and 14 passing integration tests. |
 | *3* | *Workflow & Version Persistence* | ⚪ Planned | `Workflow`, `WorkflowVersion` (immutable definitions), `WorkflowExecution`, `WorkflowStepExecution` (including `CancellationRequestedAt` and `CancellationReason` columns). |
 | *4* | *API Idempotency & Bus Outbox* | ⚪ Planned | `IdempotencyRecord`. API-side Bus Outbox. Execution creation transaction with deduplication. |
 | *5* | *Saga & Fail-Fast Orchestration* | ⚪ Planned | `WorkflowExecutionSaga`. `IWorkflowEngine` DAG step selector. Fail-fast cancellation and settling logic. Conditional UPDATE guard for `CancellationRequestedAt`. |
