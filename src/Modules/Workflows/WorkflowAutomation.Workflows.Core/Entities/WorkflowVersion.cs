@@ -1,5 +1,6 @@
 namespace WorkflowAutomation.Workflows.Core.Entities;
 
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using WorkflowAutomation.Shared.Kernel.Primitives;
 using WorkflowAutomation.Shared.Kernel.Time;
@@ -23,6 +24,13 @@ public sealed class WorkflowVersion : AuditableEntity<Guid>, IMustHaveWorkspace
     public string? ValidationErrorsJson { get; private set; }
     public DateTimeOffset? PublishedAt { get; private set; }
 
+    private static readonly JsonSerializerOptions Options = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = false,
+        WriteIndented = false,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
     // Required by EF Core
     private WorkflowVersion()
     {
@@ -101,7 +109,7 @@ public sealed class WorkflowVersion : AuditableEntity<Guid>, IMustHaveWorkspace
         string? validationErrorsJson = null;
         if (!validationResult.IsValid)
         {
-            validationErrorsJson = JsonSerializer.Serialize(validationResult.Errors);
+            validationErrorsJson = JsonSerializer.Serialize(validationResult.Errors, Options);
         }
 
         return new WorkflowVersion(

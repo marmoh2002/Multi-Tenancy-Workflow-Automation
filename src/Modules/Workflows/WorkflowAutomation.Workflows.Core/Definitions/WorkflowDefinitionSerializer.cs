@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace WorkflowAutomation.Workflows.Core.Definitions;
@@ -10,9 +11,9 @@ public static class WorkflowDefinitionSerializer
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = false,
-        WriteIndented = false
+        WriteIndented = false,
+        // Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
-
     public static string Serialize(WorkflowDefinition definition)
     {
         ArgumentNullException.ThrowIfNull(definition);

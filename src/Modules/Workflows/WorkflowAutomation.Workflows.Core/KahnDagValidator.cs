@@ -27,7 +27,7 @@ public sealed class KahnDagValidator : IDagValidator
             }
             else if (!knownIds.Add(step.Id))
             {
-                errors.Add($"Duplicate step id '{step.Id}'.");
+                errors.Add($"Duplicate step id {step.Id}.");
             }
         }
 
@@ -47,12 +47,12 @@ public sealed class KahnDagValidator : IDagValidator
             {
                 if (!knownIds.Contains(dependency))
                 {
-                    errors.Add($"Step '{step.Id}' depends on unknown step '{dependency}'.");
+                    errors.Add($"Step {step.Id} depends on unknown step {dependency}.");
                 }
 
                 if (!seenDependencies.Add(dependency))
                 {
-                    errors.Add($"Step '{step.Id}' lists dependency '{dependency}' more than once.");
+                    errors.Add($"Step {step.Id} lists dependency {dependency} more than once.");
                 }
             }
         }
@@ -62,7 +62,7 @@ public sealed class KahnDagValidator : IDagValidator
             return DagValidationResult.Failure(errors);
         }
 
-        // 3. Build graph structures used by Kahn's algorithm.
+        // 3. Build graph structures used by Kahns algorithm.
         //
         // adjacency:
         //   key = prerequisite step
