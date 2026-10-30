@@ -59,6 +59,22 @@ Verifies schema constraints, `jsonb` serialization, and lifecycle persistence en
   * Cascade: deleting a `Workflow` automatically purges all its child `WorkflowVersion` rows in PostgreSQL (`OnDelete(DeleteBehavior.Cascade)`).
   * Restrict: deleting a `Workspace` containing existing workflows is blocked with `DbUpdateException` (`OnDelete(DeleteBehavior.Restrict)`).
 
+### 5. Workflow Version Immutability & Persistence Boundary (`WorkflowVersionImmutabilityInterceptorTests.cs`)
+Verifies defense-in-depth rules enforced by `WorkflowVersionImmutabilityInterceptor`:
+
+* **Draft Updates**:
+  * Permitted draft modifications (definition, schema version, error notes) are allowed and persisted across scopes.
+* **Publication Transition**:
+  * Transitioning from draft to published requires `PublishedAt` and no validation errors; valid transitions persist smoothly.
+* **Published Version Immutability**:
+  * Mutating properties or unpublishing an already published version via ChangeTracker tampering throws `InvalidOperationException`.
+* **Permanent Metadata Protection**:
+  * Mutating permanent immutable fields (`VersionNumber`, `WorkflowId`, `WorkspaceId`) on drafts is blocked with `InvalidOperationException`.
+* **Independent vs. Cascade Deletion**:
+  * Discarding unpublished drafts independently succeeds.
+  * Deleting a published version independently is strictly prohibited.
+  * Deleting a published version alongside its owning `Workflow` in the same unit of work is permitted.
+
 ---
 
 ## Database Strategy
