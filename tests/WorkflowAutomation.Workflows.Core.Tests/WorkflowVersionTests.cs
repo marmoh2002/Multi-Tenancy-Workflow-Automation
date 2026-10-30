@@ -328,6 +328,180 @@ public class WorkflowVersionTests
         Assert.Throws<ArgumentNullException>(() =>
             version.Publish(null!, _clock));
     }
+    [Fact]
+    public void UpdateDraft_updates_definition_and_advances_updated_at()
+    {
+        var version = WorkflowVersion.CreateDraft(
+            Guid.NewGuid(),
+            WorkspaceId,
+            WorkflowId,
+            versionNumber: 1,
+            CreateSampleDefinition("step-1"),
+            _validator,
+            _clock);
+
+        _clock.Advance(TimeSpan.FromMinutes(15));
+        var updatedDefinition = CreateSampleDefinition("step-2");
+
+        version.UpdateDraft(updatedDefinition, _validator, _clock);
+
+        Assert.Equal(new DateTimeOffset(_clock.UtcNow), version.UpdatedAt);
+        var retrieved = version.GetDefinition();
+        Assert.Single(retrieved.Steps);
+        Assert.Equal("step-2", retrieved.Steps[0].Id);
+    }
+
+    [Fact]
+    public void UpdateDraft_with_identical_definition_does_not_advance_updated_at()
+    {
+        var definition = CreateSampleDefinition("step-1");
+        var version = WorkflowVersion.CreateDraft(
+            Guid.NewGuid(),
+            WorkspaceId,
+            WorkflowId,
+            versionNumber: 1,
+            definition,
+            _validator,
+            _clock);
+
+        _clock.Advance(TimeSpan.FromMinutes(15));
+        version.UpdateDraft(definition, _validator, _clock);
+
+        Assert.Null(version.UpdatedAt);
+    }
+
+    [Fact]
+    public void UpdateDraft_recomputes_validation_errors()
+    {
+        var cyclicDefinition = new WorkflowDefinition
+        {
+            Steps =
+            [
+                new StepDefinition { Id = "a", Type = "Log", DependsOn = ["b"] },
+                new StepDefinition { Id = "b", Type = "Log", DependsOn = ["a"] }
+            ]
+        };
+
+        var version = WorkflowVersion.CreateDraft(
+            Guid.NewGuid(),
+            WorkspaceId,
+            WorkflowId,
+            versionNumber: 1,
+            cyclicDefinition,
+            _validator,
+            _clock);
+
+        Assert.NotNull(version.ValidationErrorsJson);
+
+        // Fix the cycle
+        var validDefinition = CreateSampleDefinition("step-fixed");
+        version.UpdateDraft(validDefinition, _validator, _clock);
+
+        Assert.Null(version.ValidationErrorsJson);
+    }
+
+    [Fact]
+    public void UpdateDraft_rejects_already_published_version()
+    {
+        var version = WorkflowVersion.CreateDraft(
+            Guid.NewGuid(),
+            WorkspaceId,
+            WorkflowId,
+            versionNumber: 1,
+            CreateSampleDefinition("step-1"),
+            _validator,
+            _clock);
+
+        version.Publish(_validator, _clock);
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            version.UpdateDraft(CreateSampleDefinition("step-2"), _validator, _clock));
+
+        Assert.Contains("Cannot update a published workflow version", exception.Message);
+    }
+
+    [Fact]
+    public void UpdateDraft_rejects_unsupported_schema_version()
+    {
+        var version = WorkflowVersion.CreateDraft(
+            Guid.NewGuid(),
+            WorkspaceId,
+            WorkflowId,
+            versionNumber: 1,
+            CreateSampleDefinition("step-1"),
+            _validator,
+            _clock);
+
+        Assert.Throws<NotSupportedException>(() =>
+            version.UpdateDraft(
+                CreateSampleDefinition("step-2"),
+                _validator,
+                _clock,
+                definitionSchemaVersion: 99));
+    }
+
+    [Fact]
+    public void Publish_after_UpdateDraft_validates_final_definition_and_rejects_invalid_update()
+    {
+        // 1. Start with a valid draft
+        var version = WorkflowVersion.CreateDraft(
+            Guid.NewGuid(),
+            WorkspaceId,
+            WorkflowId,
+            versionNumber: 1,
+            CreateSampleDefinition("step-1"),
+            _validator,
+            _clock);
+
+        // 2. Update draft to a cyclic definition
+        var cyclicDefinition = new WorkflowDefinition
+        {
+            Steps =
+            [
+                new StepDefinition { Id = "a", Type = "Log", DependsOn = ["b"] },
+                new StepDefinition { Id = "b", Type = "Log", DependsOn = ["a"] }
+            ]
+        };
+        version.UpdateDraft(cyclicDefinition, _validator, _clock);
+
+        // 3. Publish must re-validate the current snapshot and reject it
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            version.Publish(_validator, _clock));
+
+        Assert.Contains("validation errors", exception.Message);
+        Assert.False(version.IsPublished);
+    }
+
+    [Fact]
+    public void Publish_after_UpdateDraft_succeeds_when_initially_invalid_draft_is_corrected()
+    {
+        // 1. Start with an invalid draft
+        var cyclicDefinition = new WorkflowDefinition
+        {
+            Steps =
+            [
+                new StepDefinition { Id = "a", Type = "Log", DependsOn = ["b"] },
+                new StepDefinition { Id = "b", Type = "Log", DependsOn = ["a"] }
+            ]
+        };
+        var version = WorkflowVersion.CreateDraft(
+            Guid.NewGuid(),
+            WorkspaceId,
+            WorkflowId,
+            versionNumber: 1,
+            cyclicDefinition,
+            _validator,
+            _clock);
+
+        // 2. Correct the draft
+        version.UpdateDraft(CreateSampleDefinition("step-ok"), _validator, _clock);
+
+        // 3. Publish should succeed
+        version.Publish(_validator, _clock);
+
+        Assert.True(version.IsPublished);
+        Assert.Null(version.ValidationErrorsJson);
+    }
 
 
 }
