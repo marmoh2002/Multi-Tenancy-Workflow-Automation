@@ -21,8 +21,8 @@ public class GlobalQueryFilterTests : IDisposable
 
         _options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseSqlite(_connection)
-            .EnableDetailedErrors()
-            .EnableSensitiveDataLogging()
+            // .EnableDetailedErrors()
+            // .EnableSensitiveDataLogging()
             .Options;
 
         // Build the database schema in memory

@@ -32,11 +32,13 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser, A
         // 1. Log only executed SQL commands to the Console at Information level
         optionsBuilder.LogTo(
             Console.WriteLine,
-            new[] { DbLoggerCategory.Database.Command.Name },
-            LogLevel.Information);
+            new[] { DbLoggerCategory.Database.Command.Name }
+            // ,LogLevel.Information
+            , LogLevel.Error
+            );
 
         // 2. Include parameter values in the logs (helpful to inspect query filter parameters)
-        optionsBuilder.EnableSensitiveDataLogging();
+        // optionsBuilder.EnableSensitiveDataLogging();
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
