@@ -218,7 +218,7 @@ public class WorkflowVersionTests
 
         _clock.Advance(TimeSpan.FromHours(1));
 
-        version.Publish(_clock);
+        version.Publish(new KahnDagValidator(), _clock);
 
         var expectedTimestamp = new DateTimeOffset(_clock.UtcNow);
         Assert.True(version.IsPublished);
@@ -238,10 +238,10 @@ public class WorkflowVersionTests
             _validator,
             _clock);
 
-        version.Publish(_clock);
+        version.Publish(new KahnDagValidator(), _clock);
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            version.Publish(_clock));
+            version.Publish(new KahnDagValidator(), _clock));
 
         Assert.Contains("already published", exception.Message);
     }
@@ -268,7 +268,7 @@ public class WorkflowVersionTests
             _clock);
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            version.Publish(_clock));
+            version.Publish(new KahnDagValidator(), _clock));
 
         Assert.Contains("validation errors", exception.Message);
         Assert.False(version.IsPublished);
@@ -292,7 +292,7 @@ public class WorkflowVersionTests
             _clock);
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            version.Publish(_clock));
+            version.Publish(new KahnDagValidator(), _clock));
 
         Assert.Contains("empty workflow definition", exception.Message);
         Assert.False(version.IsPublished);
@@ -311,7 +311,22 @@ public class WorkflowVersionTests
             _clock);
 
         Assert.Throws<ArgumentNullException>(() =>
-            version.Publish(null!));
+            version.Publish(new KahnDagValidator(), null!));
+    }
+    [Fact]
+    public void Publish_rejects_null_validator()
+    {
+        var version = WorkflowVersion.CreateDraft(
+            Guid.NewGuid(),
+            WorkspaceId,
+            WorkflowId,
+            versionNumber: 1,
+            CreateSampleDefinition("step-1"),
+            _validator,
+            _clock);
+
+        Assert.Throws<ArgumentNullException>(() =>
+            version.Publish(null!, _clock));
     }
 
 

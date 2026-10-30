@@ -123,27 +123,22 @@ public sealed class WorkflowVersion : AuditableEntity<Guid>, IMustHaveWorkspace
             clock);
     }
 
-    public WorkflowDefinition GetDefinition()
+    public WorkflowDefinition GetDefinition() // transforms a JSON serialized string into a WorkflowDefinition object
     {
         return WorkflowDefinitionSerializer.Deserialize(
             SerializedDefinition,
             DefinitionSchemaVersion);
     }
 
-    public void Publish(IClock clock)
+    public void Publish(IDagValidator validator, IClock clock)
     {
         ArgumentNullException.ThrowIfNull(clock);
+        ArgumentNullException.ThrowIfNull(validator);
 
         if (IsPublished)
         {
             throw new InvalidOperationException(
                 "Workflow version is already published.");
-        }
-
-        if (ValidationErrorsJson is not null)
-        {
-            throw new InvalidOperationException(
-                "Cannot publish a workflow version with validation errors.");
         }
 
         var definition = GetDefinition();
@@ -153,9 +148,68 @@ public sealed class WorkflowVersion : AuditableEntity<Guid>, IMustHaveWorkspace
                 "Cannot publish an empty workflow definition.");
         }
 
+        var validationResult = validator.Validate(definition);
+        if (!validationResult.IsValid)
+        {
+            throw new InvalidOperationException(
+                "Cannot publish a workflow version with validation errors.");
+        }
         var now = clock.UtcNow;
         IsPublished = true;
         PublishedAt = now;
+        ValidationErrorsJson = null;
         MarkUpdated(now);
+
+    }
+
+    public void UpdateDraft(
+        WorkflowDefinition definition,
+        IDagValidator validator,
+        IClock clock,
+        int definitionSchemaVersion = CurrentDefinitionSchemaVersion)
+    {
+        if (IsPublished)
+        {
+            throw new InvalidOperationException(
+                "Cannot update a published workflow version.");
+        }
+
+        ArgumentNullException.ThrowIfNull(definition);
+        ArgumentNullException.ThrowIfNull(validator);
+        ArgumentNullException.ThrowIfNull(clock);
+
+        if (definitionSchemaVersion != CurrentDefinitionSchemaVersion)
+        {
+            throw new NotSupportedException(
+                $"Definition schema version '{definitionSchemaVersion}' " +
+                 $"is not supported.");
+        }
+
+
+        // 1. Serialize in-memory definition (structural validation)
+        var serialized = WorkflowDefinitionSerializer.Serialize(definition);
+        // 2. Deserialize snapshot to verify round trip and obtain isolated instance
+        var snapshot = WorkflowDefinitionSerializer.Deserialize(
+            serialized,
+            definitionSchemaVersion);
+        // 3. Validate snapshot with DAG validator
+        var validationResult = validator.Validate(snapshot);
+        string? validationErrorsJson = null;
+        if (!validationResult.IsValid)
+        {
+            validationErrorsJson = JsonSerializer.Serialize(validationResult.Errors, Options);
+        }
+        // 4. Change detection: only update and advance timestamp if content changed
+        var hasChanged =
+            SerializedDefinition != serialized ||
+            DefinitionSchemaVersion != definitionSchemaVersion ||
+            ValidationErrorsJson != validationErrorsJson;
+        if (hasChanged)
+        {
+            SerializedDefinition = serialized;
+            DefinitionSchemaVersion = definitionSchemaVersion;
+            ValidationErrorsJson = validationErrorsJson;
+            MarkUpdated(clock.UtcNow);
+        }
     }
 }

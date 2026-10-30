@@ -36,7 +36,7 @@ public class WorkflowTests
     private WorkflowVersion CreatePublishedVersion(Guid workflowId, Guid workspaceId, int versionNumber = 1)
     {
         var version = CreateDraftVersion(workflowId, workspaceId, versionNumber);
-        version.Publish(_clock);
+        version.Publish(new KahnDagValidator(), _clock);
         return version;
     }
 

@@ -111,7 +111,7 @@ public class WorkflowPersistenceTests : IClassFixture<PostgreSqlFixture>
             var version = WorkflowVersion.CreateDraft(versionId, workspaceId, workflowId, 1, definition, _validator, _clock);
 
             // Domain lifecycle: publish version, persist the version, then activate the workflow
-            version.Publish(_clock);
+            version.Publish(new KahnDagValidator(), _clock);
 
             db.Workflows.Add(workflow);
             db.WorkflowVersions.Add(version);
