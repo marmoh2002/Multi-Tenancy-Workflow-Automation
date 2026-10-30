@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using WorkflowAutomation.Identity.Core.Entities;
 using WorkflowAutomation.Shared.Kernel.Context;
 using WorkflowAutomation.Shared.Kernel.Primitives;
+using WorkflowAutomation.Workflows.Core.Entities;
 using WorkflowAutomation.Workspaces.Core.Entities;
 
 public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
@@ -21,6 +22,8 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser, A
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMembership> WorkspaceMemberships => Set<WorkspaceMembership>();
     public DbSet<WorkspaceConnection> WorkspaceConnections => Set<WorkspaceConnection>();
+    public DbSet<Workflow> Workflows => Set<Workflow>();
+    public DbSet<WorkflowVersion> WorkflowVersions => Set<WorkflowVersion>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

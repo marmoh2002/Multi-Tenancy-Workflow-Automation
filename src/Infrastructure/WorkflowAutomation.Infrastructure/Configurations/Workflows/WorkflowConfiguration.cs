@@ -50,20 +50,17 @@ public class WorkflowConfiguration : IEntityTypeConfiguration<Workflow>
 
         builder.HasOne<WorkflowVersion>()
             .WithMany()
-            .HasForeignKey(w => w.ActiveVersionId)
+            .HasForeignKey(w => new { w.Id, w.ActiveVersionId })
+            .HasPrincipalKey(v => new { v.WorkflowId, v.Id })
             .OnDelete(DeleteBehavior.Restrict);
-
-
-        // current ActiveVersionId relationship checks that a version exists, 
-        // but not that it belongs to the same workflow. Enforcing ownership 
-        // at the database level requires a composite foreign key and 
-        // corresponding principal key; we should account for that in 
-        // WorkflowVersionConfiguration.
 
         builder.Property(w => w.CreatedAt)
 .IsRequired();
 
         builder.Property(w => w.UpdatedAt)
             .IsRequired(false);
+
+     
+        builder.HasAlternateKey(w => new { w.WorkspaceId, w.Id });
     }
 }
