@@ -39,6 +39,26 @@ Verifies service registration and scoping configured by `AddInfrastructurePersis
 * **Cross-Scope Isolation (`Assert.NotSame`)**:
   * Confirms that distinct request scopes receive separate `WorkspaceContext` instances, preventing state bleed between requests.
 
+### 4. Workflow Persistence & Relational Constraints (`WorkflowPersistenceTests.cs`)
+Verifies schema constraints, `jsonb` serialization, and lifecycle persistence enforced by PostgreSQL and EF Core:
+
+* **Basic Persistence & JSONB Round-Trip**:
+  * Persisting a `Workflow` and draft `WorkflowVersion`, and reading them back in an isolated `DbContext` scope to verify that EF Core properly serializes and deserializes the JSON definition (`jsonb`).
+* **Bidirectional Lifecycle Persistence**:
+  * Verifies draft creation, publishing, and activating a version on the workflow using two-step persistence to safely resolve circular foreign key dependencies.
+* **Unique Constraints**:
+  * Uniqueness of `(WorkspaceId, Name)`: duplicate workflow names within the same workspace are rejected with `DbUpdateException`.
+  * Uniqueness of `(WorkflowId, VersionNumber)`: duplicate version numbers for a single workflow are rejected with `DbUpdateException`.
+* **Composite Foreign Key Boundary Integrity**:
+  * Version-to-Workflow: rejects inserting a `WorkflowVersion` targeting another workspace's workflow via composite FK `(WorkspaceId, WorkflowId) -> Workflows(WorkspaceId, Id)`.
+  * Active-Version-to-Workflow: rejects setting `ActiveVersionId` to a version belonging to a different workflow via composite FK `(Id, ActiveVersionId) -> WorkflowVersions(WorkflowId, Id)`.
+* **Multi-Tenant Query Filters**:
+  * Dynamic scoping: queries for `Workflows` and `WorkflowVersions` return only records belonging to the active workspace.
+  * Fail-closed default: queries without an active workspace context evaluate against SQL `NULL` and safely return zero records without throwing an exception.
+* **Deletion Semantics**:
+  * Cascade: deleting a `Workflow` automatically purges all its child `WorkflowVersion` rows in PostgreSQL (`OnDelete(DeleteBehavior.Cascade)`).
+  * Restrict: deleting a `Workspace` containing existing workflows is blocked with `DbUpdateException` (`OnDelete(DeleteBehavior.Restrict)`).
+
 ---
 
 ## Database Strategy
@@ -48,7 +68,7 @@ The suite uses two providers, each chosen for the behavior under test:
 * **SQLite In-Memory (`GlobalQueryFilterTests`)**:
   * Tests EF Core global query filter translation and fail-closed behavior without external dependencies.
   * The test class keeps a `SqliteConnection("DataSource=:memory:")` open for its lifetime and disposes it on teardown, since the in-memory database exists only while the connection remains open.
-* **PostgreSQL via Testcontainers (`TenantWriteValidationInterceptorTests`)**:
+* **PostgreSQL via Testcontainers (`TenantWriteValidationInterceptorTests`, `WorkflowPersistenceTests`)**:
   * Uses `PostgreSqlFixture` to start a disposable `postgres:15-alpine` container, build the production DI container, and apply the committed EF migrations through `MigrateAsync`.
   * Exercises the Npgsql provider and the actual migration baseline rather than a model-generated schema.
 
