@@ -21,7 +21,7 @@ public static class DependencyInjection
 
         // 3. Register the write validation interceptor as Scoped
         services.AddScoped<TenantWriteValidationInterceptor>();
-
+        services.AddScoped<WorkflowVersionImmutabilityInterceptor>();
         // 4. Register ApplicationDbContext as Scoped and unpooled
         services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
         {
@@ -30,7 +30,7 @@ public static class DependencyInjection
             // Give EF Core this scope's checker.
             options.AddInterceptors(
                 serviceProvider.GetRequiredService<
-                    TenantWriteValidationInterceptor>());
+                    TenantWriteValidationInterceptor>(), serviceProvider.GetRequiredService<WorkflowVersionImmutabilityInterceptor>());
         }, contextLifetime: ServiceLifetime.Scoped, optionsLifetime: ServiceLifetime.Scoped);
 
         return services;
