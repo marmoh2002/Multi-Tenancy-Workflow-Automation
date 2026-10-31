@@ -14,22 +14,6 @@ namespace WorkflowAutomation.Infrastructure.Migrations
                 name: "FK_Workflows_WorkflowVersions_Id_ActiveVersionId",
                 table: "Workflows");
 
-            migrationBuilder.AddColumn<uint>(
-                name: "xmin",
-                table: "WorkflowVersions",
-                type: "xid",
-                rowVersion: true,
-                nullable: false,
-                defaultValue: 0u);
-
-            migrationBuilder.AddColumn<uint>(
-                name: "xmin",
-                table: "Workflows",
-                type: "xid",
-                rowVersion: true,
-                nullable: false,
-                defaultValue: 0u);
-
             migrationBuilder.AddCheckConstraint(
                 name: "CK_WorkflowVersions_DefinitionSchemaVersion_Positive",
                 table: "WorkflowVersions",
