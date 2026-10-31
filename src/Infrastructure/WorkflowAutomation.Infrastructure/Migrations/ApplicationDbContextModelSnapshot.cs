@@ -251,16 +251,31 @@ namespace WorkflowAutomation.Infrastructure.Migrations
                     b.Property<Guid>("WorkspaceId")
                         .HasColumnType("uuid");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("Id", "ActiveVersionId");
 
+                    b.HasIndex("WorkspaceId", "IsActive");
+
                     b.HasIndex("WorkspaceId", "Name")
                         .IsUnique();
 
-                    b.ToTable("Workflows", (string)null);
+                    b.ToTable("Workflows", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Workflows_CreatedByUserId_NotEmpty", "\"CreatedByUserId\" <> '00000000-0000-0000-0000-000000000000'::uuid");
+
+                            t.HasCheckConstraint("CK_Workflows_IsActive_RequiresActiveVersionId", "NOT \"IsActive\" OR \"ActiveVersionId\" IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_Workflows_Name_TrimmedAndNotEmpty", "\"Name\" = btrim(\"Name\", E' \\t\\n\\r\\f\\v') AND \"Name\" <> ''");
+                        });
                 });
 
             modelBuilder.Entity("WorkflowAutomation.Workflows.Core.Entities.WorkflowVersion", b =>
@@ -300,6 +315,12 @@ namespace WorkflowAutomation.Infrastructure.Migrations
                     b.Property<Guid>("WorkspaceId")
                         .HasColumnType("uuid");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("WorkflowId", "VersionNumber")
@@ -307,7 +328,20 @@ namespace WorkflowAutomation.Infrastructure.Migrations
 
                     b.HasIndex("WorkspaceId", "WorkflowId");
 
-                    b.ToTable("WorkflowVersions", (string)null);
+                    b.ToTable("WorkflowVersions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_WorkflowVersions_DefinitionSchemaVersion_Positive", "\"DefinitionSchemaVersion\" > 0");
+
+                            t.HasCheckConstraint("CK_WorkflowVersions_PublicationTimestamp_Consistency", "(\"IsPublished\" = false AND \"PublishedAt\" IS NULL) OR (\"IsPublished\" = true AND \"PublishedAt\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_WorkflowVersions_Published_NoValidationErrors", "NOT \"IsPublished\" OR \"ValidationErrorsJson\" IS NULL");
+
+                            t.HasCheckConstraint("CK_WorkflowVersions_SerializedDefinition_IsObject", "jsonb_typeof(\"SerializedDefinition\") = 'object'");
+
+                            t.HasCheckConstraint("CK_WorkflowVersions_ValidationErrorsJson_IsArrayOrNull", "\"ValidationErrorsJson\" IS NULL OR jsonb_typeof(\"ValidationErrorsJson\") = 'array'");
+
+                            t.HasCheckConstraint("CK_WorkflowVersions_VersionNumber_Positive", "\"VersionNumber\" > 0");
+                        });
                 });
 
             modelBuilder.Entity("WorkflowAutomation.Workspaces.Core.Entities.Workspace", b =>
@@ -495,7 +529,7 @@ namespace WorkflowAutomation.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("Id", "ActiveVersionId")
                         .HasPrincipalKey("WorkflowId", "Id")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("WorkflowAutomation.Workflows.Core.Entities.WorkflowVersion", b =>

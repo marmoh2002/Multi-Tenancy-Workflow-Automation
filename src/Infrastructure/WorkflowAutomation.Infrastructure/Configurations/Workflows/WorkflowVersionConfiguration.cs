@@ -9,7 +9,32 @@ public class WorkflowVersionConfiguration : IEntityTypeConfiguration<WorkflowVer
 {
     public void Configure(EntityTypeBuilder<WorkflowVersion> builder)
     {
-        builder.ToTable("WorkflowVersions");
+        builder.ToTable("WorkflowVersions", t =>
+        {
+            t.HasCheckConstraint(
+                "CK_WorkflowVersions_VersionNumber_Positive",
+                "\"VersionNumber\" > 0");
+
+            t.HasCheckConstraint(
+                "CK_WorkflowVersions_DefinitionSchemaVersion_Positive",
+                "\"DefinitionSchemaVersion\" > 0");
+
+            t.HasCheckConstraint(
+                "CK_WorkflowVersions_SerializedDefinition_IsObject",
+                "jsonb_typeof(\"SerializedDefinition\") = 'object'");
+
+            t.HasCheckConstraint(
+                "CK_WorkflowVersions_PublicationTimestamp_Consistency",
+                "(\"IsPublished\" = false AND \"PublishedAt\" IS NULL) OR (\"IsPublished\" = true AND \"PublishedAt\" IS NOT NULL)");
+
+            t.HasCheckConstraint(
+                "CK_WorkflowVersions_Published_NoValidationErrors",
+                "NOT \"IsPublished\" OR \"ValidationErrorsJson\" IS NULL");
+
+            t.HasCheckConstraint(
+                "CK_WorkflowVersions_ValidationErrorsJson_IsArrayOrNull",
+                "\"ValidationErrorsJson\" IS NULL OR jsonb_typeof(\"ValidationErrorsJson\") = 'array'");
+        });
 
         builder.HasKey(v => v.Id);
 
