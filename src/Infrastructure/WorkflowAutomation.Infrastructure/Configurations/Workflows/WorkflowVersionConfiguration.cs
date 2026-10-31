@@ -62,6 +62,11 @@ public class WorkflowVersionConfiguration : IEntityTypeConfiguration<WorkflowVer
             .HasForeignKey(v => new { v.WorkspaceId, v.WorkflowId })
             .HasPrincipalKey(w => new { w.WorkspaceId, w.Id })
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property<uint>("xmin")
+        .HasColumnName("xmin")
+        .HasColumnType("xid")
+        .IsRowVersion();
     }
 
 }

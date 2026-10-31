@@ -10,7 +10,21 @@ public class WorkflowConfiguration : IEntityTypeConfiguration<Workflow>
 {
     public void Configure(EntityTypeBuilder<Workflow> builder)
     {
-        builder.ToTable("Workflows");
+        builder.ToTable("Workflows", t =>
+        {
+            t.HasCheckConstraint(
+                "CK_Workflows_Name_TrimmedAndNotEmpty",
+                "\"Name\" = btrim(\"Name\", E' \\t\\n\\r\\f\\v') AND \"Name\" <> ''");
+
+            t.HasCheckConstraint(
+                "CK_Workflows_CreatedByUserId_NotEmpty",
+                "\"CreatedByUserId\" <> '00000000-0000-0000-0000-000000000000'::uuid");
+
+            t.HasCheckConstraint(
+                "CK_Workflows_IsActive_RequiresActiveVersionId",
+                "NOT \"IsActive\" OR \"ActiveVersionId\" IS NOT NULL");
+        });
+
 
         builder.HasKey(w => w.Id);
 
@@ -38,6 +52,8 @@ public class WorkflowConfiguration : IEntityTypeConfiguration<Workflow>
         builder.HasIndex(w => new { w.WorkspaceId, w.Name })
             .IsUnique();
 
+        builder.HasIndex(w => new { w.WorkspaceId, w.IsActive });
+
         builder.HasOne<Workspace>()
             .WithMany()
             .HasForeignKey(w => w.WorkspaceId)
@@ -52,15 +68,19 @@ public class WorkflowConfiguration : IEntityTypeConfiguration<Workflow>
             .WithMany()
             .HasForeignKey(w => new { w.Id, w.ActiveVersionId })
             .HasPrincipalKey(v => new { v.WorkflowId, v.Id })
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.Property(w => w.CreatedAt)
-.IsRequired();
+            .IsRequired();
 
         builder.Property(w => w.UpdatedAt)
             .IsRequired(false);
 
-     
+
         builder.HasAlternateKey(w => new { w.WorkspaceId, w.Id });
+        builder.Property<uint>("xmin")
+          .HasColumnName("xmin")
+          .HasColumnType("xid")
+          .IsRowVersion();
     }
 }
