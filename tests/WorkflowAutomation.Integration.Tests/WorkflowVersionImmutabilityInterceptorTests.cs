@@ -459,5 +459,129 @@ public class WorkflowVersionImmutabilityInterceptorTests : IClassFixture<Postgre
             Assert.Null(publishedVersion);
         }
     }
+    [Fact]
+    public async Task GivenDraft_WhenUpdatedAndPublishedInSameSave_SucceedsAndPersistsPublishedDefinition()
+    {
+        var versionId = Guid.NewGuid();
+        Workspace workspace;
+        ApplicationUser user;
+        Workflow workflow;
+
+        // 1. Seed prerequisites and initial draft version
+        using (var scope = _fixture.CreateScope())
+        {
+            var wsContext = scope.ServiceProvider.GetRequiredService<WorkspaceContext>();
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            (user, workspace, workflow) = await SeedPrerequisitesAsync(db);
+            db.Users.Add(user);
+            db.Workspaces.Add(workspace);
+            db.Workflows.Add(workflow);
+
+            wsContext.SetContext(workspace.Id, user.Id);
+            var draft = WorkflowVersion.CreateDraft(
+                versionId,
+                workspace.Id,
+                workflow.Id,
+                versionNumber: 1,
+                CreateSampleDefinition("step-initial"),
+                _validator,
+                _clock);
+
+            db.WorkflowVersions.Add(draft);
+            await db.SaveChangesAsync();
+        }
+
+        // 2. In a new scope: update draft AND publish in the same unit of work
+        using (var scope = _fixture.CreateScope())
+        {
+            var wsContext = scope.ServiceProvider.GetRequiredService<WorkspaceContext>();
+            wsContext.SetContext(workspace.Id, user.Id);
+
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var draft = await db.WorkflowVersions.FindAsync(versionId);
+            Assert.NotNull(draft);
+
+            // Update draft first
+            var finalDefinition = CreateSampleDefinition("step-final");
+            draft.UpdateDraft(finalDefinition, _validator, _clock);
+
+            // Publish immediately prior to SaveChanges
+            draft.Publish(_validator, _clock);
+
+            await db.SaveChangesAsync();
+        }
+
+        // 3. Verify in an isolated scope that the final definition was published
+        using (var scope = _fixture.CreateScope())
+        {
+            var wsContext = scope.ServiceProvider.GetRequiredService<WorkspaceContext>();
+            wsContext.SetContext(workspace.Id, user.Id);
+
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var version = await db.WorkflowVersions.FindAsync(versionId);
+            Assert.NotNull(version);
+
+            Assert.True(version.IsPublished);
+            Assert.NotNull(version.PublishedAt);
+            Assert.Null(version.ValidationErrorsJson);
+
+            var persistedDef = version.GetDefinition();
+            Assert.Single(persistedDef.Steps);
+            Assert.Equal("step-final", persistedDef.Steps[0].Id);
+        }
+    }
+
+    [Fact]
+    public async Task GivenPublishedVersion_WhenUnpublishAttempted_ThrowsInvalidOperationException()
+    {
+        var versionId = Guid.NewGuid();
+        Workspace workspace;
+        ApplicationUser user;
+        Workflow workflow;
+
+        // 1. Seed prerequisites and published version
+        using (var scope = _fixture.CreateScope())
+        {
+            var wsContext = scope.ServiceProvider.GetRequiredService<WorkspaceContext>();
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            (user, workspace, workflow) = await SeedPrerequisitesAsync(db);
+            db.Users.Add(user);
+            db.Workspaces.Add(workspace);
+            db.Workflows.Add(workflow);
+
+            wsContext.SetContext(workspace.Id, user.Id);
+            var version = WorkflowVersion.CreateDraft(
+                versionId,
+                workspace.Id,
+                workflow.Id,
+                versionNumber: 1,
+                CreateSampleDefinition("step-1"),
+                _validator,
+                _clock);
+
+            version.Publish(_validator, _clock);
+
+            db.WorkflowVersions.Add(version);
+            await db.SaveChangesAsync();
+        }
+
+        // 2. Load published version in a new scope, mutate IsPublished to false, and attempt to save
+        using (var scope = _fixture.CreateScope())
+        {
+            var wsContext = scope.ServiceProvider.GetRequiredService<WorkspaceContext>();
+            wsContext.SetContext(workspace.Id, user.Id);
+
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var publishedVersion = await db.WorkflowVersions.FindAsync(versionId);
+            Assert.NotNull(publishedVersion);
+
+            db.Entry(publishedVersion).Property(v => v.IsPublished).CurrentValue = false;
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => db.SaveChangesAsync());
+            Assert.Contains("Cannot modify or unpublish an already published workflow version", ex.Message);
+        }
+    }
 
 }

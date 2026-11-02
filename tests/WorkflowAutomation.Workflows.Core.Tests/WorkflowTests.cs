@@ -427,6 +427,69 @@ public class WorkflowTests
         Assert.True(workflow.IsActive);
         Assert.Equal(activeUpdatedAt, workflow.UpdatedAt);
     }
+    [Fact]
+    public void PrepareForDeletion_with_null_clock_throws_ArgumentNullException()
+    {
+        var workflow = Workflow.Create(
+            Guid.NewGuid(),
+            WorkspaceId,
+            CreatorId,
+            "Order Processing",
+            null,
+            _clock);
 
+        Assert.Throws<ArgumentNullException>(() => workflow.PrepareForDeletion(null!));
+    }
+
+    [Fact]
+    public void PrepareForDeletion_when_active_with_active_version_clears_active_state_and_updates_timestamp()
+    {
+        var workflowId = Guid.NewGuid();
+        var workflow = Workflow.Create(
+            workflowId,
+            WorkspaceId,
+            CreatorId,
+            "Order Processing",
+            null,
+            _clock);
+
+        var version = CreatePublishedVersion(workflowId, WorkspaceId);
+        _clock.Advance(TimeSpan.FromMinutes(2));
+        workflow.ActivateVersion(version, _clock);
+        workflow.Activate(_clock);
+
+        Assert.True(workflow.IsActive);
+        Assert.Equal(version.Id, workflow.ActiveVersionId);
+
+        _clock.Advance(TimeSpan.FromMinutes(5));
+        workflow.PrepareForDeletion(_clock);
+
+        Assert.False(workflow.IsActive);
+        Assert.Null(workflow.ActiveVersionId);
+        var expectedUpdatedAt = new DateTimeOffset(_clock.UtcNow);
+        Assert.Equal(expectedUpdatedAt, workflow.UpdatedAt);
+    }
+
+    [Fact]
+    public void PrepareForDeletion_when_already_inactive_without_active_version_is_noop_and_preserves_timestamp()
+    {
+        var workflowId = Guid.NewGuid();
+        var workflow = Workflow.Create(
+            workflowId,
+            WorkspaceId,
+            CreatorId,
+            "Order Processing",
+            null,
+            _clock);
+
+        var initialUpdatedAt = workflow.UpdatedAt; // null
+
+        _clock.Advance(TimeSpan.FromMinutes(5));
+        workflow.PrepareForDeletion(_clock);
+
+        Assert.False(workflow.IsActive);
+        Assert.Null(workflow.ActiveVersionId);
+        Assert.Equal(initialUpdatedAt, workflow.UpdatedAt);
+    }
 
 }

@@ -176,4 +176,19 @@ public sealed class Workflow : AuditableEntity<Guid>, IMustHaveWorkspace
         ActiveVersionId = version.Id;
         MarkUpdated(clock.UtcNow);
     }
+    public void PrepareForDeletion(IClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+
+        // If already inactive and has no active version, it is a no-op
+        if (!IsActive && ActiveVersionId is null)
+        {
+            return;
+        }
+
+        IsActive = false;
+        ActiveVersionId = null;
+        MarkUpdated(clock.UtcNow);
+    }
+
 }

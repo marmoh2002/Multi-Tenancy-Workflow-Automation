@@ -38,7 +38,7 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser, A
             );
 
         // 2. Include parameter values in the logs (helpful to inspect query filter parameters)
-        // optionsBuilder.EnableSensitiveDataLogging();
+        optionsBuilder.EnableSensitiveDataLogging();
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
