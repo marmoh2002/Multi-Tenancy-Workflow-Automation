@@ -119,14 +119,6 @@ namespace WorkflowAutomation.Infrastructure.Migrations
                 name: "CK_Workflows_Name_TrimmedAndNotEmpty",
                 table: "Workflows");
 
-            migrationBuilder.DropColumn(
-                name: "xmin",
-                table: "WorkflowVersions");
-
-            migrationBuilder.DropColumn(
-                name: "xmin",
-                table: "Workflows");
-
             migrationBuilder.AddForeignKey(
                 name: "FK_Workflows_WorkflowVersions_Id_ActiveVersionId",
                 table: "Workflows",

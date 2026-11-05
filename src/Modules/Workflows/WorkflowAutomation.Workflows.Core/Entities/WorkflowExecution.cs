@@ -2,8 +2,7 @@ namespace WorkflowAutomation.Workflows.Core.Entities;
 
 using System.Security.Cryptography;
 using System.Text;
-// using WorkflowAutomation.Shared.Kernel.Entities;
-// using WorkflowAutomation.Shared.Kernel.MultiTenancy;
+
 using WorkflowAutomation.Shared.Kernel.Primitives;
 using WorkflowAutomation.Shared.Kernel.Time;
 using WorkflowAutomation.Workflows.Core.Definitions;
@@ -76,6 +75,10 @@ public sealed class WorkflowExecution : AuditableEntity<Guid>, IMustHaveWorkspac
 
             if (string.IsNullOrWhiteSpace(scheduledOccurrenceId))
                 throw new ArgumentException("Scheduled executions must provide a ScheduledOccurrenceId.", nameof(scheduledOccurrenceId));
+            var trimmedOccurrence = scheduledOccurrenceId.Trim();
+            if (trimmedOccurrence.Length > 200)
+                throw new ArgumentException("ScheduledOccurrenceId cannot exceed 200 characters.", nameof(scheduledOccurrenceId));
+            scheduledOccurrenceId = trimmedOccurrence;
         }
         else
         {
@@ -98,7 +101,7 @@ public sealed class WorkflowExecution : AuditableEntity<Guid>, IMustHaveWorkspac
 
         if (version.WorkspaceId != workflow.WorkspaceId)
             throw new InvalidOperationException("The supplied version does not belong to the same workspace as the workflow.");
-
+        var normalizedOccurrenceId = scheduledOccurrenceId?.Trim();
         var execution = new WorkflowExecution(id)
         {
             WorkspaceId = workflow.WorkspaceId,
@@ -113,7 +116,7 @@ public sealed class WorkflowExecution : AuditableEntity<Guid>, IMustHaveWorkspac
             Source = source,
             RequestedByUserId = requestedByUserId,
             ScheduleId = scheduleId,
-            ScheduledOccurrenceId = scheduledOccurrenceId
+            ScheduledOccurrenceId = normalizedOccurrenceId
         };
 
         execution.MarkCreated(clock.UtcNow);
@@ -161,25 +164,31 @@ public sealed class WorkflowExecution : AuditableEntity<Guid>, IMustHaveWorkspac
 
         if (Status != WorkflowExecutionStatus.Pending && Status != WorkflowExecutionStatus.Running)
             throw new InvalidOperationException($"Cannot fail an execution in '{Status}' status. Only Pending or Running executions can be failed.");
-
+        var normalizedStepId = string.IsNullOrWhiteSpace(failedStepId) ? null : failedStepId.Trim();
+        if (normalizedStepId?.Length > 100)
+            throw new ArgumentException("FailedStepId cannot exceed 100 characters.", nameof(failedStepId));
         var now = clock.UtcNow;
         Status = WorkflowExecutionStatus.Failed;
-        FailedStepId = failedStepId?.Trim();
+        FailedStepId = normalizedStepId;
         FailureReason = failureReason.Trim();
         CancellationRequestedAt = null;
         CancellationReason = null;
         CompletedAt = now;
         MarkUpdated(now);
     }
-    public void PreventCancellation()
+    public void PreventCancellation(IClock clock)
     {
+        ArgumentNullException.ThrowIfNull(clock);
         if (Status != WorkflowExecutionStatus.Running)
             throw new InvalidOperationException($"Cannot prevent cancellation for an execution in '{Status}' status.");
 
         if (CancellationRequestedAt is not null)
             throw new InvalidOperationException("Cannot prevent cancellation after a cancellation request has already been recorded.");
-
+        var now = clock.UtcNow;
         IsCancellable = false;
+        MarkUpdated(now);
+
+
     }
     public void RequestCancellation(string reason, IClock clock)
     {

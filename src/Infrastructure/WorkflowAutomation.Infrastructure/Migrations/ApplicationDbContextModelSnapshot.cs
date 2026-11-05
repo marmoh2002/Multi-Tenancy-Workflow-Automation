@@ -278,6 +278,141 @@ namespace WorkflowAutomation.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("WorkflowAutomation.Workflows.Core.Entities.WorkflowExecution", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CancellationReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("CancellationRequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DefinitionHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)")
+                        .IsFixedLength();
+
+                    b.Property<int>("DefinitionSchemaVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DefinitionSnapshot")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FailedStepId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("FailureReason")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsCancellable")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("RequestedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ScheduleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ScheduledOccurrenceId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("WorkflowName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("WorkflowVersionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("WorkspaceId", "Id");
+
+                    b.HasIndex("WorkflowVersionId");
+
+                    b.HasIndex("ScheduleId", "ScheduledOccurrenceId")
+                        .IsUnique()
+                        .HasFilter("\"ScheduleId\" IS NOT NULL AND \"ScheduledOccurrenceId\" IS NOT NULL");
+
+                    b.HasIndex("WorkspaceId", "Status", "CreatedAt");
+
+                    b.HasIndex("WorkspaceId", "WorkflowId", "CreatedAt");
+
+                    b.HasIndex("WorkspaceId", "WorkflowId", "Status");
+
+                    b.ToTable("WorkflowExecutions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_WorkflowExecutions_CancellationRequest_RequiresReason", "\"CancellationRequestedAt\" IS NULL OR (\"CancellationReason\" IS NOT NULL AND btrim(\"CancellationReason\", E' \\t\\n\\r\\f\\v') <> '')");
+
+                            t.HasCheckConstraint("CK_WorkflowExecutions_Cancelled_RequiresTimestamps", "\"Status\" <> 5 OR (\"CancelledAt\" IS NOT NULL AND \"CancellationRequestedAt\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_WorkflowExecutions_Completed_RequiresCompletedAt", "\"Status\" <> 3 OR \"CompletedAt\" IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_WorkflowExecutions_DefinitionHash_Sha256Hex", "\"DefinitionHash\" ~ '^[0-9a-f]{64}$'");
+
+                            t.HasCheckConstraint("CK_WorkflowExecutions_DefinitionSchemaVersion_Positive", "\"DefinitionSchemaVersion\" > 0");
+
+                            t.HasCheckConstraint("CK_WorkflowExecutions_DefinitionSnapshot_IsObject", "jsonb_typeof(\"DefinitionSnapshot\"::jsonb) = 'object'");
+
+                            t.HasCheckConstraint("CK_WorkflowExecutions_FailedStepId_OnlyOnFailed", "\"Status\" = 4 OR \"FailedStepId\" IS NULL");
+
+                            t.HasCheckConstraint("CK_WorkflowExecutions_Failed_RequiresCompletedAtAndReason", "\"Status\" <> 4 OR (\"CompletedAt\" IS NOT NULL AND \"FailureReason\" IS NOT NULL AND btrim(\"FailureReason\", E' \\t\\n\\r\\f\\v') <> '')");
+
+                            t.HasCheckConstraint("CK_WorkflowExecutions_Running_RequiresStartedAt", "\"Status\" <> 2 OR \"StartedAt\" IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_WorkflowExecutions_Source_Enum_Valid", "\"Source\" IN (1, 2, 3)");
+
+                            t.HasCheckConstraint("CK_WorkflowExecutions_Status_Enum_Valid", "\"Status\" IN (1, 2, 3, 4, 5)");
+
+                            t.HasCheckConstraint("CK_WorkflowExecutions_VersionNumber_Positive", "\"VersionNumber\" > 0");
+
+                            t.HasCheckConstraint("CK_WorkflowExecutions_WorkflowName_TrimmedAndNotEmpty", "\"WorkflowName\" = btrim(\"WorkflowName\", E' \\t\\n\\r\\f\\v') AND \"WorkflowName\" <> ''");
+                        });
+                });
+
             modelBuilder.Entity("WorkflowAutomation.Workflows.Core.Entities.WorkflowVersion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -530,6 +665,15 @@ namespace WorkflowAutomation.Infrastructure.Migrations
                         .HasForeignKey("Id", "ActiveVersionId")
                         .HasPrincipalKey("WorkflowId", "Id")
                         .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("WorkflowAutomation.Workflows.Core.Entities.WorkflowExecution", b =>
+                {
+                    b.HasOne("WorkflowAutomation.Workspaces.Core.Entities.Workspace", null)
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("WorkflowAutomation.Workflows.Core.Entities.WorkflowVersion", b =>
