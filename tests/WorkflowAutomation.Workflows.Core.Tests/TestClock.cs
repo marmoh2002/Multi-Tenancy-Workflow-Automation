@@ -13,7 +13,9 @@ public sealed class TestClock : IClock
         _utcNow = initialTime ?? new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
         _advancePerRead = advancePerRead;
     }
-
+    /// <summary>
+    /// Tracks total reads of UtcNow, including assertions. Capture this count immediately before a transition to measure operation reads.
+    /// </summary>
     public int ReadsCount { get; private set; }
 
     public DateTime UtcNow

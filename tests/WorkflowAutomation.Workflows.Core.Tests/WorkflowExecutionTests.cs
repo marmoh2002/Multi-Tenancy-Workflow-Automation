@@ -732,20 +732,6 @@ public class WorkflowExecutionTests
     }
 
     [Fact]
-    public void PreventCancellation_rejects_non_running_or_already_requested_executions()
-    {
-        var executionPending = CreatePendingExecution();
-        Assert.Throws<InvalidOperationException>(() => executionPending.PreventCancellation(_clock));
-
-        var executionRunning = CreatePendingExecution();
-        executionRunning.Start(_clock);
-        executionRunning.RequestCancellation("Stop", _clock);
-
-        var ex = Assert.Throws<InvalidOperationException>(() => executionRunning.PreventCancellation(_clock));
-        Assert.Contains("after a cancellation request has already been recorded", ex.Message);
-    }
-
-    [Fact]
     public void MarkCancelled_transitions_to_cancelled_with_timestamps()
     {
         var execution = CreatePendingExecution();

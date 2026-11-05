@@ -122,24 +122,23 @@ public sealed class WorkflowExecution : AuditableEntity<Guid>, IMustHaveWorkspac
         execution.MarkCreated(clock.UtcNow);
         return execution;
     }
-
     public void Start(IClock clock)
     {
-        if (CancellationRequestedAt is not null)
-            throw new InvalidOperationException(
-                "Cannot start an execution with a pending cancellation request.");
-
         ArgumentNullException.ThrowIfNull(clock);
 
+        // 1. Must be Pending
         if (Status != WorkflowExecutionStatus.Pending)
             throw new InvalidOperationException($"Cannot start an execution in '{Status}' status. Only Pending executions can be started.");
+
+        // 2. If it is Pending, make sure cancellation wasn't requested while pending
+        if (CancellationRequestedAt is not null)
+            throw new InvalidOperationException("Cannot start an execution with a pending cancellation request.");
 
         var now = clock.UtcNow;
         Status = WorkflowExecutionStatus.Running;
         StartedAt = now;
         MarkUpdated(now);
     }
-
     public void Complete(IClock clock)
     {
         ArgumentNullException.ThrowIfNull(clock);

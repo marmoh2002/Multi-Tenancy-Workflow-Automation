@@ -8,7 +8,7 @@ Unit tests for the `WorkflowExecution` entity in `WorkflowAutomation.Workflows.C
 
 | Component | Purpose |
 | :--- | :--- |
-| `TestClock` | Deterministic `IClock` implementation. Defaults to `2026-01-01T12:00:00Z`; `Advance(TimeSpan)` simulates time passage between state transitions. |
+| `TestClock` | Deterministic `IClock` implementation. Supports initial time, manual `Advance(TimeSpan)`, a `ReadsCount` counter, and an optional `advancePerRead` configuration that advances time on each read to mathematically prove single clock reads. |
 | `WorkspaceId`, `CreatorId` | Fixed static `Guid` values shared across tests. |
 | `CreateTestWorkflow(...)` | Creates an active test `Workflow` aggregate with valid name and description. |
 | `CreatePublishedVersion(...)` | Creates and publishes a valid 1-step DAG `WorkflowVersion`, providing a published target for execution pinning. |
@@ -38,9 +38,9 @@ Unit tests for the `WorkflowExecution` entity in `WorkflowAutomation.Workflows.C
 
 | Test | Verified Behavior |
 | :--- | :--- |
-| `Start_transitions_pending_to_running_and_sets_timestamps` | Transitions status from `Pending` to `Running`; records `StartedAt = now` and `UpdatedAt = now` via a single clock read (`StartedAt == UpdatedAt`). |
+| `Start_transitions_pending_to_running_and_sets_timestamps` | Transitions status from `Pending` to `Running`. Uses an auto-advancing `TestClock` (`advancePerRead: 1s`) to mathematically prove a single clock read occurred: `StartedAt` equals `UpdatedAt`, and `ReadsCount` increments by exactly 1. |
 | `Start_rejects_execution_with_pending_cancellation_request` | Throws `InvalidOperationException` if a cancellation request was recorded before starting. |
-| `Start_rejects_non_pending_executions` | Throws `InvalidOperationException` when called on any execution not in `Pending` status. |
+| `Start_rejects_all_non_pending_statuses` | Systematically asserts `InvalidOperationException` when called on any execution not in `Pending` status (`Running`, `Completed`, `Failed`, or `Cancelled`). |
 
 ### 3. Complete Transition & Race Precedence (`Complete`)
 
@@ -73,7 +73,7 @@ Unit tests for the `WorkflowExecution` entity in `WorkflowAutomation.Workflows.C
 | `RequestCancellation_rejects_all_terminal_statuses` | Asserts `InvalidOperationException` when attempting to cancel executions that reached `Completed` or `Failed`. |
 | `RequestCancellation_rejects_missing_or_whitespace_reason_on_first_request` | Theory testing `null`, `""`, and `"   "`; all throw `ArgumentException` when cancellation has not yet been recorded. |
 | `PreventCancellation_locks_execution_against_cancellation_and_updates_timestamp` | Sets `IsCancellable = false` and updates `UpdatedAt = now`. Any subsequent call to `RequestCancellation` throws `InvalidOperationException` indicating the point of no return has been passed. |
-| `PreventCancellation_rejects_non_running_or_already_requested_executions` | Throws `InvalidOperationException` if invoked on non-running executions or after cancellation has already been requested. |
+| `PreventCancellation_rejects_all_non_running_or_already_requested_executions` | Systematically asserts `InvalidOperationException` if invoked on non-running executions (`Pending`, `Completed`, `Failed`, `Cancelled`) or after cancellation has already been recorded. |
 | `MarkCancelled_transitions_to_cancelled_with_timestamps` | Transitions status to `Cancelled`; sets `CancelledAt = now`, `FinishedAt = now`, and `UpdatedAt = now`. |
 | `MarkCancelled_requires_prior_cancellation_request` | Throws `InvalidOperationException` if invoked without an existing recorded cancellation request. |
 

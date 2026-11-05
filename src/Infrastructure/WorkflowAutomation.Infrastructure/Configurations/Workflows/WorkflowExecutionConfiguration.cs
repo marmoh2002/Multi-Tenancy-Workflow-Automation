@@ -33,11 +33,11 @@ public class WorkflowExecutionConfiguration : IEntityTypeConfiguration<WorkflowE
             // Enum range guards for raw SQL inserts
             t.HasCheckConstraint(
                 "CK_WorkflowExecutions_Status_Enum_Valid",
-                "\"Status\" IN (1, 2, 3, 4, 5)");
+                $"\"Status\" IN ({(int)WorkflowExecutionStatus.Pending}, {(int)WorkflowExecutionStatus.Running}, {(int)WorkflowExecutionStatus.Completed}, {(int)WorkflowExecutionStatus.Failed}, {(int)WorkflowExecutionStatus.Cancelled})");
 
             t.HasCheckConstraint(
                 "CK_WorkflowExecutions_Source_Enum_Valid",
-                "\"Source\" IN (1, 2, 3)");
+               $"\"Source\" IN ({(int)WorkflowExecutionSource.Manual}, {(int)WorkflowExecutionSource.Scheduled}, {(int)WorkflowExecutionSource.Webhook})");
 
             // 2. Status & Timestamp Consistency
             t.HasCheckConstraint(
@@ -66,8 +66,8 @@ public class WorkflowExecutionConfiguration : IEntityTypeConfiguration<WorkflowE
                 "\"CancellationRequestedAt\" IS NULL OR (\"CancellationReason\" IS NOT NULL AND btrim(\"CancellationReason\", E' \\t\\n\\r\\f\\v') <> '')");
 
             t.HasCheckConstraint(
-                "CK_WorkflowExecutions_DefinitionSnapshot_IsObject",
-                "jsonb_typeof(\"DefinitionSnapshot\"::jsonb) = 'object'");
+                "CK_WorkflowExecutions_DefinitionSnapshot_NotEmpty",
+                "\"DefinitionSnapshot\" <> ''");
         });
 
         builder.HasKey(e => e.Id);
