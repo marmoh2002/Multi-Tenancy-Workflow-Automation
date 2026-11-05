@@ -102,6 +102,17 @@ public sealed class WorkflowExecution : AuditableEntity<Guid>, IMustHaveWorkspac
         if (version.WorkspaceId != workflow.WorkspaceId)
             throw new InvalidOperationException("The supplied version does not belong to the same workspace as the workflow.");
         var normalizedOccurrenceId = scheduledOccurrenceId?.Trim();
+        var snapshot = version.SerializedDefinition;
+
+        // The snapshot is immutable once persisted, so validate it before pinning it.
+        // 1. Text-level: the stored value must be present.
+        if (string.IsNullOrWhiteSpace(snapshot))
+            throw new InvalidOperationException("The workflow version definition snapshot is empty.");
+
+        // 2. Serializable-level: schema version, JSON object, and steps structure.
+        // GetDefinition throws if the snapshot cannot be read back as a definition.
+        _ = version.GetDefinition();
+
         var execution = new WorkflowExecution(id)
         {
             WorkspaceId = workflow.WorkspaceId,
@@ -110,8 +121,8 @@ public sealed class WorkflowExecution : AuditableEntity<Guid>, IMustHaveWorkspac
             WorkflowName = workflow.Name,
             VersionNumber = version.VersionNumber,
             DefinitionSchemaVersion = version.DefinitionSchemaVersion,
-            DefinitionSnapshot = version.SerializedDefinition,
-            DefinitionHash = ComputeSha256Hash(version.SerializedDefinition),
+            DefinitionSnapshot = snapshot,
+            DefinitionHash = ComputeSha256Hash(snapshot),
             Status = WorkflowExecutionStatus.Pending,
             Source = source,
             RequestedByUserId = requestedByUserId,

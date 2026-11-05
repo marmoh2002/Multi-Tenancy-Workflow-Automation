@@ -5,15 +5,11 @@
 namespace WorkflowAutomation.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class ReplaceDefinitionSnapshotConstraint : Migration
+    public partial class AddDefinitionSnapshotNotEmptyConstraint : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropCheckConstraint(
-                name: "CK_WorkflowExecutions_DefinitionSnapshot_IsObject",
-                table: "WorkflowExecutions");
-
             migrationBuilder.AddCheckConstraint(
                 name: "CK_WorkflowExecutions_DefinitionSnapshot_NotEmpty",
                 table: "WorkflowExecutions",
@@ -26,11 +22,6 @@ namespace WorkflowAutomation.Infrastructure.Migrations
             migrationBuilder.DropCheckConstraint(
                 name: "CK_WorkflowExecutions_DefinitionSnapshot_NotEmpty",
                 table: "WorkflowExecutions");
-
-            migrationBuilder.AddCheckConstraint(
-                name: "CK_WorkflowExecutions_DefinitionSnapshot_IsObject",
-                table: "WorkflowExecutions",
-                sql: "jsonb_typeof(\"DefinitionSnapshot\"::jsonb) = 'object'");
         }
     }
 }

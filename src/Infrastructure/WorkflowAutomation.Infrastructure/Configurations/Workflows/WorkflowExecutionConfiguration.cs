@@ -65,7 +65,13 @@ public class WorkflowExecutionConfiguration : IEntityTypeConfiguration<WorkflowE
                 "CK_WorkflowExecutions_CancellationRequest_RequiresReason",
                 "\"CancellationRequestedAt\" IS NULL OR (\"CancellationReason\" IS NOT NULL AND btrim(\"CancellationReason\", E' \\t\\n\\r\\f\\v') <> '')");
 
-            t.HasCheckConstraint("CK_WorkflowExecutions_DefinitionSnapshot_NotEmpty", "\"DefinitionSnapshot\" <> ''");
+            t.HasCheckConstraint(
+                "CK_WorkflowExecutions_DefinitionSnapshot_NotEmpty",
+                "\"DefinitionSnapshot\" <> ''");
+
+            t.HasCheckConstraint(
+                "CK_WorkflowExecutions_DefinitionSnapshot_IsObject",
+                "jsonb_typeof(\"DefinitionSnapshot\"::jsonb) = 'object'");
         });
 
         builder.HasKey(e => e.Id);

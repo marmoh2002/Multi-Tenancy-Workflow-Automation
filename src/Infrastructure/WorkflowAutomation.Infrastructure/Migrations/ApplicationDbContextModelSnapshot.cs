@@ -395,6 +395,8 @@ namespace WorkflowAutomation.Infrastructure.Migrations
 
                             t.HasCheckConstraint("CK_WorkflowExecutions_DefinitionSchemaVersion_Positive", "\"DefinitionSchemaVersion\" > 0");
 
+                            t.HasCheckConstraint("CK_WorkflowExecutions_DefinitionSnapshot_IsObject", "jsonb_typeof(\"DefinitionSnapshot\"::jsonb) = 'object'");
+
                             t.HasCheckConstraint("CK_WorkflowExecutions_DefinitionSnapshot_NotEmpty", "\"DefinitionSnapshot\" <> ''");
 
                             t.HasCheckConstraint("CK_WorkflowExecutions_FailedStepId_OnlyOnFailed", "\"Status\" = 4 OR \"FailedStepId\" IS NULL");

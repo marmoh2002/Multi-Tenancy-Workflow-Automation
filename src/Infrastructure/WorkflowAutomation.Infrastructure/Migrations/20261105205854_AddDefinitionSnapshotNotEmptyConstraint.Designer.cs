@@ -12,8 +12,8 @@ using WorkflowAutomation.Infrastructure.Persistence;
 namespace WorkflowAutomation.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261105202805_ReplaceDefinitionSnapshotConstraint")]
-    partial class ReplaceDefinitionSnapshotConstraint
+    [Migration("20261105205854_AddDefinitionSnapshotNotEmptyConstraint")]
+    partial class AddDefinitionSnapshotNotEmptyConstraint
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -397,6 +397,8 @@ namespace WorkflowAutomation.Infrastructure.Migrations
                             t.HasCheckConstraint("CK_WorkflowExecutions_DefinitionHash_Sha256Hex", "\"DefinitionHash\" ~ '^[0-9a-f]{64}$'");
 
                             t.HasCheckConstraint("CK_WorkflowExecutions_DefinitionSchemaVersion_Positive", "\"DefinitionSchemaVersion\" > 0");
+
+                            t.HasCheckConstraint("CK_WorkflowExecutions_DefinitionSnapshot_IsObject", "jsonb_typeof(\"DefinitionSnapshot\"::jsonb) = 'object'");
 
                             t.HasCheckConstraint("CK_WorkflowExecutions_DefinitionSnapshot_NotEmpty", "\"DefinitionSnapshot\" <> ''");
 
