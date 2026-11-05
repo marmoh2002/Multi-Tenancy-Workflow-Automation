@@ -24,6 +24,7 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser, A
     public DbSet<WorkspaceConnection> WorkspaceConnections => Set<WorkspaceConnection>();
     public DbSet<Workflow> Workflows => Set<Workflow>();
     public DbSet<WorkflowVersion> WorkflowVersions => Set<WorkflowVersion>();
+    public DbSet<WorkflowExecution> WorkflowExecutions => Set<WorkflowExecution>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

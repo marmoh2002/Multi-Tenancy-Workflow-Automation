@@ -303,6 +303,8 @@ Pure C# message contracts under `Execution.Commands` (`StartExecution`, `Execute
 <details>
 <summary>details</summary>
 - *Kahn DAG Validator (`KahnDagValidator`)*: Validates acyclic structure and computes topological execution orders using BFS queue traversal.
+- *Workflow & Version Aggregates*: `Workflow` and immutable `WorkflowVersion` managing serialized DAG definitions, versioning, and draft lifecycles.
+- *Workflow Execution (`WorkflowExecution`)*: Runtime state machine supporting pending, running, completed, failed, and cancelled transitions; idempotent cancellation requests; point-of-no-return locking (`IsCancellable`); and "Completion Wins" race resolution.
 - *Domain Models*: `WorkflowDefinition`, `StepDefinition`, `WorkflowExecutionContext`, `DagValidationResult`.
 </details>
 
@@ -410,6 +412,8 @@ The integration suite requires Docker because `TenantWriteValidationInterceptorT
 | *Error Handling & Control Flow* | Throwing C# exceptions for expected domain failures (validation errors, conflicts, state violations) degrades performance and conceals execution paths. | Functional Result Pattern via `Result`, `Result<TValue>`, `Error`, and `ErrorType` enum (`Failure`, `Validation`, `NotFound`, `Conflict`). | Explicit type-safe railway-oriented flow; straightforward mapping to HTTP status codes (400, 404, 409). |
 | *Deterministic Time Abstraction* | Calling `DateTime.UtcNow` directly creates non-deterministic domain logic, making time-sensitive unit tests (expiry, locks, intervals) difficult to write and flaky. | `IClock` abstraction with default `SystemClock` for production and mockable implementations for tests. | Reliable, deterministic unit tests for time-critical workflows. |
 | *Unified Database Context* | Managing separate DbContexts across modules requires distributed 2-phase commit transactions or leads to transaction fragmentation. | Single unified `ApplicationDbContext : IdentityDbContext` in `WorkflowAutomation.Infrastructure` sharing a single PostgreSQL database. | True ACID transactions across aggregates within the modular monolith. |
+| *Execution State Machine & Idempotent Cancellation* | Message queue retries and worker completion races cause false validation errors, contradictory terminal states (`Status = Completed` with `CancellationRequestedAt` populated), or crashes when cancelling workflows. | Idempotent short-circuiting in `RequestCancellation`, "Completion Wins" precedence that resets cancellation fields upon completion/failure, and explicit `IsCancellable` point-of-no-return locking. | Guarantees safe at-least-once message processing, eliminates Dead Letter Queue false positives, and maintains unambiguous audit records. |
+| *Snapshot Integrity & Column Types* | PostgreSQL `jsonb` normalizes whitespace and reorders keys, altering SHA-256 hash checks and breaking tamper verification (`HasIntactSnapshot()`). | Store `DefinitionSnapshot` as `text` in PostgreSQL and compute byte-exact SHA-256 checksums verified via `HasIntactSnapshot()`. | Ensures tamper detection and reproducible audit trails for pinned workflow versions. |
 
 <details>
 <summary>Planned Architectural Decisions (Phases 3–7)</summary>
