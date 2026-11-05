@@ -37,7 +37,7 @@ public class WorkflowExecutionConfiguration : IEntityTypeConfiguration<WorkflowE
 
             t.HasCheckConstraint(
                 "CK_WorkflowExecutions_Source_Enum_Valid",
-               $"\"Source\" IN ({(int)WorkflowExecutionSource.Manual}, {(int)WorkflowExecutionSource.Scheduled}, {(int)WorkflowExecutionSource.Webhook})");
+                $"\"Source\" IN ({(int)WorkflowExecutionSource.Manual}, {(int)WorkflowExecutionSource.Scheduled}, {(int)WorkflowExecutionSource.Webhook})");
 
             // 2. Status & Timestamp Consistency
             t.HasCheckConstraint(
@@ -65,9 +65,7 @@ public class WorkflowExecutionConfiguration : IEntityTypeConfiguration<WorkflowE
                 "CK_WorkflowExecutions_CancellationRequest_RequiresReason",
                 "\"CancellationRequestedAt\" IS NULL OR (\"CancellationReason\" IS NOT NULL AND btrim(\"CancellationReason\", E' \\t\\n\\r\\f\\v') <> '')");
 
-            t.HasCheckConstraint(
-                "CK_WorkflowExecutions_DefinitionSnapshot_NotEmpty",
-                "\"DefinitionSnapshot\" <> ''");
+            t.HasCheckConstraint("CK_WorkflowExecutions_DefinitionSnapshot_NotEmpty", "\"DefinitionSnapshot\" <> ''");
         });
 
         builder.HasKey(e => e.Id);
