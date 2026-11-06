@@ -87,8 +87,8 @@ WorkflowAutomation.slnx
 │           └── WorkflowAutomation.Workflows.Core/     # KahnDagValidator, Workflow models, DAG validation
 │
 └── tests/
-    ├── WorkflowAutomation.Workflows.Core.Tests/       # 8 passing xUnit DAG tests
-    └── WorkflowAutomation.Integration.Tests/          # 4 passing integration tests (Global Query Filters & DI Scoping)
+    ├── WorkflowAutomation.Workflows.Core.Tests/       # 147 passing xUnit workflow/domain tests
+    └── WorkflowAutomation.Integration.Tests/          # 72 passing integration tests (PostgreSQL via Testcontainers)
 ```
 
 ### Target State
@@ -317,6 +317,8 @@ Pure C# message contracts under `Execution.Commands` (`StartExecution`, `Execute
 
 Validation is read-only: the snapshot is never re-serialized or normalized, so the hash continues to match the stored bytes. The execution checks are independent of the source version because execution history outlives workflow/version deletion.
 
+PostgreSQL integration tests cover the execution snapshot round-trip, tenant-scoped reads, raw-insert check constraints, and retention of terminal execution history after workflow deletion.
+
 - *Domain Models*: `WorkflowDefinition`, `StepDefinition`, `WorkflowExecutionContext`, `DagValidationResult`.
 </details>
 
@@ -359,15 +361,19 @@ Validation is read-only: the snapshot is never re-serialized or normalized, so t
 
 <summary>details</summary>
 
-22 passing xUnit test cases across two test projects:
-- *`WorkflowAutomation.Workflows.Core.Tests` (8 tests)*:
-  - Empty workflows, linear dependency chains (A→B→C), diamond fan-out/fan-in graphs.
-  - Disconnected valid subgraphs and single-node graphs.
-  - Cyclic graphs, direct self-loops, and invalid/missing dependency references.
-- *`WorkflowAutomation.Integration.Tests` (14 tests)*:
-  - `GlobalQueryFilterTests` (3 tests): Verifies fail-closed behavior (unauthenticated context yields 0 records), cross-tenant isolation (Workspace A cannot see Workspace B data), and the controlled `IgnoreQueryFilters` bootstrap path on SQLite in-memory.
+219 passing xUnit test cases across two test projects:
+- *`WorkflowAutomation.Workflows.Core.Tests` (147 tests)*:
+  - DAG validation, workflow/version aggregate lifecycles, definition serialization, and `WorkflowExecution` creation, snapshot, and state-machine rules.
+- *`WorkflowAutomation.Integration.Tests` (72 tests)*:
+  - `GlobalQueryFilterTests` (3 tests): Verifies fail-closed behavior (unauthenticated context yields 0 records), cross-tenant isolation (Workspace A cannot see Workspace B data), and the controlled `IgnoreQueryFilters` bootstrap path.
   - `TenantWriteValidationInterceptorTests` (9 tests): Verifies write-side isolation on PostgreSQL via Testcontainers, including matching-workspace writes, cross-workspace inserts, updates, and deletes, missing workspace context, synchronous and asynchronous `SaveChanges` paths, and scope isolation.
   - `DependencyInjectionLifetimeTests` (2 tests): Verifies `WorkspaceContext` and `IWorkspaceContext` resolve to the exact same reference within a scope, and that distinct scopes remain completely isolated.
+  - `WorkflowPersistenceTests` (10 tests): Verifies workflow/version persistence, `jsonb` round-trips, unique and composite foreign keys, tenant filters, and cascade/restrict deletion behavior.
+  - `WorkflowConstraintTests` (12 tests): Verifies PostgreSQL check constraints for workflow names, active-version consistency, version numbers/schema versions, JSON definitions, publication metadata, and deletion cascades.
+  - `WorkflowConcurrencyTests` (7 tests): Verifies optimistic concurrency (`xmin`) across concurrent draft edits, publication, deletion, and workflow metadata updates.
+  - `WorkflowVersionImmutabilityInterceptorTests` (9 tests): Verifies draft mutability, publication transitions, published-version immutability, and independent vs. cascade deletion rules.
+  - `WorkflowExecutionPersistenceTests` (3 tests): Verifies immutable snapshot round-tripping, cross-tenant execution isolation, and terminal execution-history retention after workflow deletion.
+  - `WorkflowExecutionConstraintTests` (17 tests): Verifies PostgreSQL check constraints for execution names, versions, snapshots, hashes, status/timestamps, cancellation metadata, and enums through raw SQL inserts.
 </details>
 ---
 
@@ -404,11 +410,11 @@ dotnet build WorkflowAutomation.slnx
 dotnet test WorkflowAutomation.slnx
 ```
 
-All *199 tests* (147 workflow domain unit tests + 52 integration tests) should pass:
+All *219 tests* (147 workflow/domain unit tests + 72 integration tests) should pass:
 - `WorkflowAutomation.Workflows.Core.Tests`: 147 passed
-- `WorkflowAutomation.Integration.Tests`: 52 passed
+- `WorkflowAutomation.Integration.Tests`: 72 passed
 
-The integration suite requires Docker because `TenantWriteValidationInterceptorTests` starts a disposable PostgreSQL container through Testcontainers.
+The integration suite requires Docker because the PostgreSQL-backed test classes start disposable PostgreSQL containers through Testcontainers.
 
 ---
 

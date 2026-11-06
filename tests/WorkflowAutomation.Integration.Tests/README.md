@@ -1,6 +1,6 @@
 # WorkflowAutomation.Integration.Tests
 
-Integration test suite for database persistence, EF Core global query filters, multi-tenant isolation boundaries, and dependency injection container lifetimes.
+Integration test suite for PostgreSQL persistence, EF Core global query filters, multi-tenant isolation boundaries, workflow execution snapshots and retention, and dependency injection container lifetimes.
 
 ---
 
@@ -75,16 +75,42 @@ Verifies defense-in-depth rules enforced by `WorkflowVersionImmutabilityIntercep
   * Deleting a published version independently is strictly prohibited.
   * Deleting a published version alongside its owning `Workflow` in the same unit of work is permitted.
 
+### 6. Workflow Execution Persistence & Retention (`WorkflowExecutionPersistenceTests.cs`)
+Verifies the persisted execution snapshot, tenant-scoped reads, and audit retention across workflow deletion.
+
+Detailed test notes: [WorkflowExecutionPersistenceTests.md](WorkflowExecutionPersistenceTests.md).
+
+* **Snapshot Round-Trip**:
+  * Persists a completed `WorkflowExecution`, reloads it in a fresh scope, and verifies that `WorkflowName`, `VersionNumber`, `DefinitionSchemaVersion`, `DefinitionSnapshot`, and `DefinitionHash` round-trip exactly.
+  * Recomputes the SHA-256 digest from the stored text and confirms `HasIntactSnapshot()` and `GetDefinition()` still succeed.
+* **Tenant Isolation**:
+  * Seeds one execution in each of two workspaces. Each tenant sees only its own row, and a query without an active workspace context returns zero rows (fail-closed).
+  * Uses `IgnoreQueryFilters()` to confirm both rows still exist physically.
+* **Execution-History Retention**:
+  * Deletes a workflow with two published versions and completed, failed, and cancelled executions.
+  * Confirms both versions cascade away while all three executions remain with intact, deserializable snapshots.
+
+### 7. Workflow Execution Check Constraints (`WorkflowExecutionConstraintTests.cs`)
+Verifies PostgreSQL check constraints by inserting raw execution rows that bypass EF Core and the domain.
+
+Detailed test notes: [WorkflowExecutionConstraintTests.md](WorkflowExecutionConstraintTests.md).
+
+* **Snapshot Integrity**:
+  * Rejects empty, non-object, and invalid-JSON `DefinitionSnapshot` values.
+* **Name, Version, and Hash**:
+  * Rejects untrimmed or empty `WorkflowName`, non-positive `VersionNumber` or `DefinitionSchemaVersion`, and malformed or uppercase `DefinitionHash` values.
+* **Status, Timestamps, and Cancellation**:
+  * Rejects `Running` without `StartedAt`, `Completed` without `CompletedAt`, `Failed` without a reason, `Cancelled` without `CancelledAt`, cancellation requests without a reason, and `FailedStepId` on non-failed rows.
+* **Enum Guards**:
+  * Rejects undefined `Status` and `Source` values.
+
 ---
 
 ## Database Strategy
 
-The suite uses two providers, each chosen for the behavior under test:
+The suite uses PostgreSQL via Testcontainers for every database-bound test:
 
-* **SQLite In-Memory (`GlobalQueryFilterTests`)**:
-  * Tests EF Core global query filter translation and fail-closed behavior without external dependencies.
-  * The test class keeps a `SqliteConnection("DataSource=:memory:")` open for its lifetime and disposes it on teardown, since the in-memory database exists only while the connection remains open.
-* **PostgreSQL via Testcontainers (`TenantWriteValidationInterceptorTests`, `WorkflowPersistenceTests`)**:
+* **PostgreSQL via Testcontainers** (`GlobalQueryFilterTests`, `TenantWriteValidationInterceptorTests`, `WorkflowPersistenceTests`, `WorkflowConstraintTests`, `WorkflowConcurrencyTests`, `WorkflowVersionImmutabilityInterceptorTests`, `WorkflowExecutionPersistenceTests`, `WorkflowExecutionConstraintTests`):
   * Uses `PostgreSqlFixture` to start a disposable `postgres:15-alpine` container, build the production DI container, and apply the committed EF migrations through `MigrateAsync`.
   * Exercises the Npgsql provider and the actual migration baseline rather than a model-generated schema.
 
