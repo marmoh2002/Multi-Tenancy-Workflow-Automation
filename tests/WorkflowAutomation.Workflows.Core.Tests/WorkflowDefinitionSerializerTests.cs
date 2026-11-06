@@ -1,5 +1,6 @@
 using System.Text.Json;
 using WorkflowAutomation.Workflows.Core.Definitions;
+using WorkflowAutomation.Workflows.Core.Entities;
 using Xunit;
 
 namespace WorkflowAutomation.Workflows.Core.Tests;
@@ -542,4 +543,154 @@ public class WorkflowDefinitionSerializerTests
         AssertDefinitionEqual(first, second);
     }
 
+    [Theory]
+    [InlineData(" step-1")]
+    [InlineData("step-1 ")]
+    [InlineData("  step-1  ")]
+    [InlineData("\tstep-1")]
+    public void Serialize_untrimmed_step_id_throws_json_exception(string untrimmedId)
+    {
+        var definition = Workflow(Step(untrimmedId));
+
+        var ex = Assert.Throws<JsonException>(() =>
+            WorkflowDefinitionSerializer.Serialize(definition));
+
+        Assert.Contains("Step IDs cannot contain leading or trailing whitespace", ex.Message);
+    }
+
+    [Fact]
+    public void Serialize_overlong_step_id_throws_json_exception()
+    {
+        var longId = new string('a', StepDefinition.MaxIdLength + 1);
+        var definition = Workflow(Step(longId));
+
+        var ex = Assert.Throws<JsonException>(() =>
+            WorkflowDefinitionSerializer.Serialize(definition));
+
+        Assert.Contains($"exceeding the maximum allowed length of {StepDefinition.MaxIdLength}", ex.Message);
+    }
+
+    [Fact]
+    public void Deserialize_untrimmed_step_id_throws_json_exception()
+    {
+        const string json = """
+        {
+          "steps": [
+            {
+              "id": " step-1 ",
+              "type": "Log"
+            }
+          ]
+        }
+        """;
+
+        var ex = Assert.Throws<JsonException>(() =>
+            WorkflowDefinitionSerializer.Deserialize(json, WorkflowDefinitionSerializer.CurrentSchemaVersion));
+
+        Assert.Contains("Step IDs cannot contain leading or trailing whitespace", ex.Message);
+    }
+
+    [Fact]
+    public void Deserialize_overlong_step_id_throws_json_exception()
+    {
+        var longId = new string('a', StepDefinition.MaxIdLength + 1);
+        var json = $$"""
+        {
+          "steps": [
+            {
+              "id": "{{longId}}",
+              "type": "Log"
+            }
+          ]
+        }
+        """;
+
+        var ex = Assert.Throws<JsonException>(() =>
+            WorkflowDefinitionSerializer.Deserialize(json, WorkflowDefinitionSerializer.CurrentSchemaVersion));
+
+        Assert.Contains($"exceeding the maximum allowed length of {StepDefinition.MaxIdLength}", ex.Message);
+    }
+
+    [Fact]
+    public void Serialize_untrimmed_dependency_reference_throws_json_exception()
+    {
+        var definition = Workflow(
+            Step("step-1"),
+            Step("step-2", dependsOn: [" step-1 "])
+        );
+
+        var ex = Assert.Throws<JsonException>(() =>
+            WorkflowDefinitionSerializer.Serialize(definition));
+
+        Assert.Contains("has an untrimmed dependency reference", ex.Message);
+    }
+
+    [Fact]
+    public void Serialize_overlong_dependency_reference_throws_json_exception()
+    {
+        var longDep = new string('b', StepDefinition.MaxIdLength + 1);
+        var definition = Workflow(
+            Step("step-1"),
+            Step("step-2", dependsOn: [longDep])
+        );
+
+        var ex = Assert.Throws<JsonException>(() =>
+            WorkflowDefinitionSerializer.Serialize(definition));
+
+        Assert.Contains($"exceeding the maximum allowed length of {StepDefinition.MaxIdLength}", ex.Message);
+    }
+    [Fact]
+    public void Deserialize_untrimmed_dependency_reference_throws_json_exception()
+    {
+        const string json = """
+        {
+          "steps": [
+            {
+              "id": "step-1",
+              "type": "Log"
+            },
+            {
+              "id": "step-2",
+              "type": "Log",
+              "dependsOn": [
+                " step-1 "
+              ]
+            }
+          ]
+        }
+        """;
+
+        var ex = Assert.Throws<JsonException>(() =>
+            WorkflowDefinitionSerializer.Deserialize(json, WorkflowDefinitionSerializer.CurrentSchemaVersion));
+
+        Assert.Contains("has an untrimmed dependency reference", ex.Message);
+    }
+
+    [Fact]
+    public void Deserialize_overlong_dependency_reference_throws_json_exception()
+    {
+        var longDep = new string('b', StepDefinition.MaxIdLength + 1);
+        var json = $$"""
+        {
+          "steps": [
+            {
+              "id": "step-1",
+              "type": "Log"
+            },
+            {
+              "id": "step-2",
+              "type": "Log",
+              "dependsOn": [
+                "{{longDep}}"
+              ]
+            }
+          ]
+        }
+        """;
+
+        var ex = Assert.Throws<JsonException>(() =>
+            WorkflowDefinitionSerializer.Deserialize(json, WorkflowDefinitionSerializer.CurrentSchemaVersion));
+
+        Assert.Contains($"exceeding the maximum allowed length of {StepDefinition.MaxIdLength}", ex.Message);
+    }
 }

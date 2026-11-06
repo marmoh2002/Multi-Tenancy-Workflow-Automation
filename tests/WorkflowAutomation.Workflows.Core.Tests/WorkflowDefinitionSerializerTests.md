@@ -8,7 +8,7 @@ This directory contains unit tests for the core workflow domain logic and serial
 
 | Test Suite | Responsibility | Primary Behaviors Tested |
 | :--- | :--- | :--- |
-| `DagValidatorTests` | Graph topology & execution order | Kahn's algorithm, cycle rejection, self-loops, dangling/unknown dependencies, topological ordering. |
+| `DagValidatorTests` | Graph topology & execution order | Kahn's algorithm, cycle rejection, self-loops, dangling/unknown dependencies, topological ordering, and identifier constraints (trimmed, non-empty, max 100 chars on step IDs and dependency references). |
 | `WorkflowDefinitionSerializerTests` | Serialization contract & data integrity | Schema versioning, structural invariants, nullability guards, string parameter enforcement, snapshot isolation. |
 
 ---
@@ -38,12 +38,17 @@ This directory contains unit tests for the core workflow domain logic and serial
 ### 3. Step Invariants
 - Array elements inside `"steps"` cannot be `null`.
 - Each step must have a non-empty, non-whitespace `"id"`.
+- Step `"id"` must be trimmed (leading or trailing whitespace is rejected with `JsonException`).
+- Step `"id"` cannot exceed `StepDefinition.MaxIdLength` (100 characters).
 - Step `"type"` cannot be `null`.
 
 ### 4. Dependency (`dependsOn`) Rules
 - Optional in JSON: omitted `"dependsOn"` defaults to an empty collection (`[]`).
 - Explicitly null `"dependsOn": null` is rejected (`JsonException`).
-- Null elements inside `"dependsOn"` (e.g. `[null]`) are rejected (`JsonException`).
+- Elements inside `"dependsOn"` cannot be `null`.
+- Elements inside `"dependsOn"` cannot be empty or whitespace-only (`JsonException`).
+- Elements inside `"dependsOn"` must be trimmed (leading or trailing whitespace is rejected with `JsonException`).
+- Elements inside `"dependsOn"` cannot exceed `StepDefinition.MaxIdLength` (100 characters).
 
 ### 5. Parameter (`parameters`) Rules
 - Optional in JSON: omitted `"parameters"` defaults to an empty dictionary (`{}`).
@@ -53,7 +58,7 @@ This directory contains unit tests for the core workflow domain logic and serial
 
 ### 6. In-Memory Validation (`Serialize`)
 - `Serialize(null)` throws `ArgumentNullException`.
-- In-memory definitions with null collections (`Steps = null`), null elements, blank IDs, or null parameter values throw `JsonException` before any JSON is generated.
+- In-memory definitions with null collections (`Steps = null`), null elements, blank or untrimmed IDs, IDs exceeding 100 characters, null/empty/untrimmed/overlong dependencies, or null parameter values throw `JsonException` before any JSON is generated.
 
 ### 7. Snapshot Behavior
 - Deserialization always instantiates a completely fresh object graph.
@@ -106,8 +111,13 @@ This directory contains unit tests for the core workflow domain logic and serial
 | `{"steps": [null]}` | Step entry cannot be null |
 | `{"steps": [{"type": "Log"}]}` | Missing required `"id"` property |
 | `{"steps": [{"id": "   ", "type": "Log"}]}` | Step ID cannot be blank or whitespace |
+| `{"steps": [{"id": " step-1 ", "type": "Log"}]}` | Step ID cannot contain leading or trailing whitespace |
+| `{"steps": [{"id": "<>100 chars>", "type": "Log"}]}` | Step ID cannot exceed 100 characters (`StepDefinition.MaxIdLength`) |
 | `{"steps": [{"id": "s1", "dependsOn": null}]}` | `"dependsOn"` cannot be explicitly null |
 | `{"steps": [{"id": "s1", "dependsOn": [null]}]}` | Dependency entry inside array cannot be null |
+| `{"steps": [{"id": "s1", "dependsOn": ["   "]}]}` | Dependency reference cannot be empty or whitespace |
+| `{"steps": [{"id": "s1", "dependsOn": [" step-0 "]}]}` | Dependency reference cannot contain leading or trailing whitespace |
+| `{"steps": [{"id": "s1", "dependsOn": ["<>100 chars>"]}]}` | Dependency reference cannot exceed 100 characters (`StepDefinition.MaxIdLength`) |
 | `{"steps": [{"id": "s1", "parameters": null}]}` | `"parameters"` cannot be explicitly null |
 | `{"steps": [{"id": "s1", "parameters": {"key": null}}]}` | Parameter value cannot be null |
 | `{"steps": [{"id": "s1", "parameters": {"timeout": 30}}]}` | Parameter values must be strings (not numbers) |

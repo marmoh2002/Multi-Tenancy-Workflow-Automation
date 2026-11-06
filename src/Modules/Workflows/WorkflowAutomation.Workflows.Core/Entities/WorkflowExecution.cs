@@ -48,7 +48,6 @@ public sealed class WorkflowExecution : AuditableEntity<Guid>, IMustHaveWorkspac
     public DateTimeOffset? FinishedAt => CompletedAt ?? CancelledAt;
     public bool IsCancellable { get; private set; } = true;
 
-
     public static WorkflowExecution Create(
         Guid id,
         Workflow workflow,
@@ -175,8 +174,8 @@ public sealed class WorkflowExecution : AuditableEntity<Guid>, IMustHaveWorkspac
         if (Status != WorkflowExecutionStatus.Pending && Status != WorkflowExecutionStatus.Running)
             throw new InvalidOperationException($"Cannot fail an execution in '{Status}' status. Only Pending or Running executions can be failed.");
         var normalizedStepId = string.IsNullOrWhiteSpace(failedStepId) ? null : failedStepId.Trim();
-        if (normalizedStepId?.Length > 100)
-            throw new ArgumentException("FailedStepId cannot exceed 100 characters.", nameof(failedStepId));
+        if (normalizedStepId?.Length > StepDefinition.MaxIdLength)
+            throw new ArgumentException($"FailedStepId cannot exceed {StepDefinition.MaxIdLength} characters.", nameof(failedStepId));
         var now = clock.UtcNow;
         Status = WorkflowExecutionStatus.Failed;
         FailedStepId = normalizedStepId;
@@ -241,6 +240,10 @@ public sealed class WorkflowExecution : AuditableEntity<Guid>, IMustHaveWorkspac
         MarkUpdated(now);
     }
 
+    // PERF: Re-hashes the full definition snapshot on every call.
+    // CreateStepExecution invokes this per step; if step creation becomes hot,
+    // cache the integrity result per loaded aggregate (or verify once on load)
+    // instead of recomputing the SHA-256 hash for each step execution.
     public bool HasIntactSnapshot() =>
         ComputeSha256Hash(DefinitionSnapshot) == DefinitionHash;
 
@@ -256,5 +259,43 @@ public sealed class WorkflowExecution : AuditableEntity<Guid>, IMustHaveWorkspac
     {
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         return Convert.ToHexStringLower(bytes);
+    }
+
+    public WorkflowStepExecution CreateStepExecution(
+    Guid id,
+    string stepId,
+    int attemptNumber,
+    IClock clock)
+    {
+        if (Status != WorkflowExecutionStatus.Pending && Status != WorkflowExecutionStatus.Running)
+        {
+            throw new InvalidOperationException(
+                $"Cannot create a step execution for an execution in '{Status}' status.");
+        }
+        if (CancellationRequestedAt is not null)
+        {
+            throw new InvalidOperationException(
+                "Cannot create a step execution for an execution with a pending cancellation request.");
+        }
+        if (!HasIntactSnapshot())
+        {
+            throw new InvalidOperationException(
+                "Cannot create a step execution: definition snapshot integrity check failed.");
+        }
+        var normalized = StepDefinition.NormalizeId(stepId);
+        var definition = GetDefinition();
+        if (!definition.Steps.Any(step => step.Id == normalized))
+        {
+            throw new InvalidOperationException(
+                $"Step '{stepId}' does not exist in the pinned workflow definition.");
+        }
+
+        return WorkflowStepExecution.CreatePending(
+            id,
+            WorkspaceId,
+            Id,
+            normalized,
+            attemptNumber,
+            clock);
     }
 }

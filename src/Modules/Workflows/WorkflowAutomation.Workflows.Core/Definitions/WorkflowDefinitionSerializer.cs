@@ -1,7 +1,7 @@
+namespace WorkflowAutomation.Workflows.Core.Definitions;
+
 using System.Text.Encodings.Web;
 using System.Text.Json;
-
-namespace WorkflowAutomation.Workflows.Core.Definitions;
 
 public static class WorkflowDefinitionSerializer
 {
@@ -96,6 +96,18 @@ public static class WorkflowDefinitionSerializer
                     $"Step at index {index} must have a non-empty Id.");
             }
 
+            if (step.Id != step.Id.Trim())
+            {
+                throw new JsonException(
+                    $"Step at index {index} has an untrimmed Id '{step.Id}'. Step IDs cannot contain leading or trailing whitespace.");
+            }
+
+            if (step.Id.Length > StepDefinition.MaxIdLength)
+            {
+                throw new JsonException(
+                    $"Step at index {index} has an Id '{step.Id}' exceeding the maximum allowed length of {StepDefinition.MaxIdLength} characters.");
+            }
+
             if (step.Type is null)
             {
                 throw new JsonException(
@@ -115,6 +127,24 @@ public static class WorkflowDefinitionSerializer
                     throw new JsonException(
                         $"Step '{step.Id}' cannot have a null " +
                         "dependency reference.");
+                }
+
+                if (string.IsNullOrWhiteSpace(dependency))
+                {
+                    throw new JsonException(
+                        $"Step '{step.Id}' cannot have an empty or whitespace dependency reference.");
+                }
+
+                if (dependency != dependency.Trim())
+                {
+                    throw new JsonException(
+                        $"Step '{step.Id}' has an untrimmed dependency reference '{dependency}'.");
+                }
+
+                if (dependency.Length > StepDefinition.MaxIdLength)
+                {
+                    throw new JsonException(
+                        $"Step '{step.Id}' has a dependency reference '{dependency}' exceeding the maximum allowed length of {StepDefinition.MaxIdLength} characters.");
                 }
             }
 
