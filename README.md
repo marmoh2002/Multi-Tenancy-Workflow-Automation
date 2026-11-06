@@ -304,7 +304,19 @@ Pure C# message contracts under `Execution.Commands` (`StartExecution`, `Execute
 <summary>details</summary>
 - *Kahn DAG Validator (`KahnDagValidator`)*: Validates acyclic structure and computes topological execution orders using BFS queue traversal.
 - *Workflow & Version Aggregates*: `Workflow` and immutable `WorkflowVersion` managing serialized DAG definitions, versioning, and draft lifecycles.
-- *Workflow Execution (`WorkflowExecution`)*: Runtime state machine supporting pending, running, completed, failed, and cancelled transitions; idempotent cancellation requests; point-of-no-return locking (`IsCancellable`); and "Completion Wins" race resolution.
+- *Workflow Execution (`WorkflowExecution`)*: Runtime state machine supporting pending, running, completed, failed, and cancelled transitions; idempotent cancellation requests; point-of-no-return locking (`IsCancellable`); and "Completion Wins" race resolution. Creation pins an immutable snapshot of the workflow/version definition and hashes the exact snapshot text.
+
+**Execution snapshot validation layers**
+
+| Layer | Check | Enforced by |
+|:---|:---|:---|
+| Text presence | `DefinitionSnapshot <> ''` | PostgreSQL `CK_WorkflowExecutions_DefinitionSnapshot_NotEmpty` |
+| JSON wire format | `jsonb_typeof("DefinitionSnapshot"::jsonb) = 'object'` | PostgreSQL `CK_WorkflowExecutions_DefinitionSnapshot_IsObject`; the column remains `text` |
+| Object contract | Supported `DefinitionSchemaVersion`, JSON object with a `steps` array, structurally valid definition | `WorkflowVersion.GetDefinition()` called by `WorkflowExecution.Create` before pinning |
+| Tamper integrity | Byte-exact SHA-256 of the stored snapshot | `HasIntactSnapshot()` / `DefinitionHash` |
+
+Validation is read-only: the snapshot is never re-serialized or normalized, so the hash continues to match the stored bytes. The execution checks are independent of the source version because execution history outlives workflow/version deletion.
+
 - *Domain Models*: `WorkflowDefinition`, `StepDefinition`, `WorkflowExecutionContext`, `DagValidationResult`.
 </details>
 
@@ -313,7 +325,7 @@ Pure C# message contracts under `Execution.Commands` (`StartExecution`, `Execute
 <details>
 
 <summary>details</summary>
-- *`ApplicationDbContext`*: Unified EF Core context inheriting `IdentityDbContext<ApplicationUser, ApplicationRole, Guid>`. Maps the Identity and Workspaces schemas; Workflows mappings arrive in Phase 3.
+- *`ApplicationDbContext`*: Unified EF Core context inheriting `IdentityDbContext<ApplicationUser, ApplicationRole, Guid>`. Maps the Identity, Workspaces, and Workflows schemas, including workflow versions and execution snapshots.
 
 - *Fail-Closed Global Query Filters*:
 
@@ -333,6 +345,8 @@ Pure C# message contracts under `Execution.Commands` (`StartExecution`, `Execute
   - `AddInfrastructurePersistence(connectionString)` registers `WorkspaceContext` (Scoped), forwards `IWorkspaceContext` to the same instance within the scope, and registers `ApplicationDbContext` with Scoped, unpooled lifetime using Npgsql PostgreSQL provider.
 - *EF Migrations*:
   - `InitialIdentityAndWorkspaces` creates the ASP.NET Core Identity tables plus `Workspaces`, `WorkspaceMemberships`, and `WorkspaceConnections`, including their indexes and restrict-delete foreign keys. Integration tests apply this migration through `MigrateAsync`.
+  - `AddWorkflowExecutions` creates `WorkflowExecutions` with its immutable snapshot columns, indexes, and the JSON-object snapshot check.
+  - `AddDefinitionSnapshotNotEmptyConstraint` adds the explicit non-empty text check additively; it does not replace the JSON-object check.
 </details>
 
 > [!IMPORTANT]
@@ -390,9 +404,9 @@ dotnet build WorkflowAutomation.slnx
 dotnet test WorkflowAutomation.slnx
 ```
 
-All *22 tests* (8 DAG validation unit tests + 14 integration tests) should pass:
-- `WorkflowAutomation.Workflows.Core.Tests`: 8 passed
-- `WorkflowAutomation.Integration.Tests`: 14 passed
+All *199 tests* (147 workflow domain unit tests + 52 integration tests) should pass:
+- `WorkflowAutomation.Workflows.Core.Tests`: 147 passed
+- `WorkflowAutomation.Integration.Tests`: 52 passed
 
 The integration suite requires Docker because `TenantWriteValidationInterceptorTests` starts a disposable PostgreSQL container through Testcontainers.
 
@@ -413,7 +427,7 @@ The integration suite requires Docker because `TenantWriteValidationInterceptorT
 | *Deterministic Time Abstraction* | Calling `DateTime.UtcNow` directly creates non-deterministic domain logic, making time-sensitive unit tests (expiry, locks, intervals) difficult to write and flaky. | `IClock` abstraction with default `SystemClock` for production and mockable implementations for tests. | Reliable, deterministic unit tests for time-critical workflows. |
 | *Unified Database Context* | Managing separate DbContexts across modules requires distributed 2-phase commit transactions or leads to transaction fragmentation. | Single unified `ApplicationDbContext : IdentityDbContext` in `WorkflowAutomation.Infrastructure` sharing a single PostgreSQL database. | True ACID transactions across aggregates within the modular monolith. |
 | *Execution State Machine & Idempotent Cancellation* | Message queue retries and worker completion races cause false validation errors, contradictory terminal states (`Status = Completed` with `CancellationRequestedAt` populated), or crashes when cancelling workflows. | Idempotent short-circuiting in `RequestCancellation`, "Completion Wins" precedence that resets cancellation fields upon completion/failure, and explicit `IsCancellable` point-of-no-return locking. | Guarantees safe at-least-once message processing, eliminates Dead Letter Queue false positives, and maintains unambiguous audit records. |
-| *Snapshot Integrity & Column Types* | PostgreSQL `jsonb` normalizes whitespace and reorders keys, altering SHA-256 hash checks and breaking tamper verification (`HasIntactSnapshot()`). | Store `DefinitionSnapshot` as `text` in PostgreSQL and compute byte-exact SHA-256 checksums verified via `HasIntactSnapshot()`. | Ensures tamper detection and reproducible audit trails for pinned workflow versions. |
+| *Snapshot Integrity & Layered Validation* | PostgreSQL `jsonb` normalizes whitespace and reorders keys, altering SHA-256 checks; a `text` snapshot can still be empty, malformed, a non-object, or structurally undecodable, and database checks alone cannot deserialize into the domain type. | Store `DefinitionSnapshot` as `text`; enforce `DefinitionSnapshot <> ''` and `jsonb_typeof("DefinitionSnapshot"::jsonb) = 'object'` in PostgreSQL; call `WorkflowVersion.GetDefinition()` in `WorkflowExecution.Create` before pinning; compute byte-exact SHA-256 verified via `HasIntactSnapshot()`. | Each layer catches a different failure mode: text presence, wire-format validity, and object-contract compatibility. Execution rows remain self-validating after their source workflow/version is deleted, while read-only validation preserves the exact bytes used for tamper detection. |
 
 <details>
 <summary>Planned Architectural Decisions (Phases 3–7)</summary>
