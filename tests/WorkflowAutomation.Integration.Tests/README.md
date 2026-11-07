@@ -66,6 +66,7 @@ Verifies defense-in-depth rules enforced by `WorkflowVersionImmutabilityIntercep
   * Permitted draft modifications (definition, schema version, error notes) are allowed and persisted across scopes.
 * **Publication Transition**:
   * Transitioning from draft to published requires `PublishedAt` and no validation errors; valid transitions persist smoothly.
+  * A draft may be updated with `UpdateDraft()` and published before a single `SaveChangesAsync()`; the final definition persists with the publication state.
 * **Published Version Immutability**:
   * Mutating properties or unpublishing an already published version via ChangeTracker tampering throws `InvalidOperationException`.
 * **Permanent Metadata Protection**:
@@ -76,7 +77,7 @@ Verifies defense-in-depth rules enforced by `WorkflowVersionImmutabilityIntercep
   * Deleting a published version alongside its owning `Workflow` in the same unit of work is permitted.
 
 ### 6. Workflow Execution Persistence & Retention (`WorkflowExecutionPersistenceTests.cs`)
-Verifies the persisted execution snapshot, tenant-scoped reads, and audit retention across workflow deletion.
+Verifies the persisted execution snapshot, tenant-scoped reads and writes, and audit retention across workflow deletion.
 
 Detailed test notes: [WorkflowExecutionPersistenceTests.md](WorkflowExecutionPersistenceTests.md).
 
@@ -86,9 +87,12 @@ Detailed test notes: [WorkflowExecutionPersistenceTests.md](WorkflowExecutionPer
 * **Tenant Isolation**:
   * Seeds one execution in each of two workspaces. Each tenant sees only its own row, and a query without an active workspace context returns zero rows (fail-closed).
   * Uses `IgnoreQueryFilters()` to confirm both rows still exist physically.
+* **Cross-Workspace Write Rejection**:
+  * Attempts to insert an execution owned by another workspace under the active tenant context; `TenantWriteValidationInterceptor` throws before persistence, and the row is confirmed absent via `IgnoreQueryFilters()`.
 * **Execution-History Retention**:
   * Deletes a workflow with two published versions and completed, failed, and cancelled executions.
   * Confirms both versions cascade away while all three executions remain with intact, deserializable snapshots.
+  * Verifies the associated step attempts survive with their parent executions.
 
 ### 7. Workflow Execution Check Constraints (`WorkflowExecutionConstraintTests.cs`)
 Verifies PostgreSQL check constraints by inserting raw execution rows that bypass EF Core and the domain.

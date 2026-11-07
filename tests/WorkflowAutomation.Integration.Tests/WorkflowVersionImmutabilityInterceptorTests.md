@@ -26,6 +26,8 @@ The `WorkflowVersion` domain entity encapsulates business rules through its meth
 | 5 | `GivenDraft_WhenDeletedIndependently_Succeeds` | Deletion (Happy Path) | Discarding an unpublished draft version independently via `db.WorkflowVersions.Remove(draft)` succeeds. |
 | 6 | `GivenPublishedVersion_WhenDeletedIndependently_ThrowsInvalidOperationException` | Deletion (Negative) | Removing an existing published version independently throws `"Cannot delete a published workflow version independently"`. |
 | 7 | `GivenPublishedVersion_WhenDeletedAlongWithOwningWorkflow_Succeeds` | Cascade Deletion (Happy Path) | Deleting a published version alongside its owning `Workflow` in the same unit of work is permitted and succeeds. |
+| 8 | `GivenDraft_WhenUpdatedAndPublishedInSameSave_SucceedsAndPersistsPublishedDefinition` | Publication (Combined Transition) | Updating a draft with `UpdateDraft()` and immediately publishing it before a single `SaveChangesAsync()` is permitted; the final definition, `IsPublished`, and `PublishedAt` persist while `ValidationErrorsJson` remains `null`. |
+| 9 | `GivenPublishedVersion_WhenUnpublishAttempted_ThrowsInvalidOperationException` | Immutability (Negative) | Flipping `IsPublished` back to `false` on a persisted published version through the ChangeTracker throws `"Cannot modify or unpublish an already published workflow version"` and the change is not saved. |
 
 ---
 
@@ -40,6 +42,7 @@ The `WorkflowVersion` domain entity encapsulates business rules through its meth
   - `PublishedAt` must be populated.
   - `ValidationErrorsJson` must be `null`.
   - Only publication-related and draft-editable properties may be modified simultaneously.
+  - A draft may be updated and published in the same unit of work (`UpdateDraft()` followed by `Publish()` before `SaveChangesAsync()`); the final draft-editable values are persisted together with the publication state.
 
 ### 3.3 Published Version Immutability
 - If `OriginalValue(IsPublished) == true`:

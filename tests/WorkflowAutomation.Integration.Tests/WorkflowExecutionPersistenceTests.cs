@@ -223,6 +223,56 @@ public class WorkflowExecutionPersistenceTests : IClassFixture<PostgreSqlFixture
     }
 
     [Fact]
+    public async Task GivenCrossWorkspaceWrite_WhenSaved_TenantWriteValidationInterceptorThrows()
+    {
+        // 1. Arrange: seed two separate workspaces
+        var workspaceA = await SeedExecutionAsync("Workspace A Write Attempt");
+        var workspaceB = await SeedExecutionAsync("Workspace B Owned Execution");
+
+        // 2. Act: in Workspace A context, attempt to add an execution belonging to Workspace B
+        using var scopeA = _fixture.CreateScope();
+        var workspaceContextA = scopeA.ServiceProvider.GetRequiredService<WorkspaceContext>();
+        workspaceContextA.SetContext(workspaceA.WorkspaceId, workspaceA.UserId);
+        var dbA = scopeA.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var workflowB = await dbA.Workflows
+            .IgnoreQueryFilters()
+            .SingleAsync(w => w.Id == workspaceB.WorkflowId);
+
+        var versionB = await dbA.WorkflowVersions
+            .IgnoreQueryFilters()
+            .SingleAsync(v => v.Id == workspaceB.VersionId);
+
+        var crossWorkspaceExecution = WorkflowExecution.Create(
+            Guid.NewGuid(),
+            workflowB,
+            versionB,
+            WorkflowExecutionSource.Manual,
+            _clock,
+            requestedByUserId: workspaceB.UserId);
+
+        dbA.WorkflowExecutions.Add(crossWorkspaceExecution);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => dbA.SaveChangesAsync());
+
+        // 3. Assert: interceptor identifies the tenant boundary and the entity type
+        Assert.Contains("Cross-workspace write detected", ex.Message);
+        Assert.Contains(nameof(WorkflowExecution), ex.Message);
+        Assert.Contains(workspaceB.WorkspaceId.ToString(), ex.Message);
+        Assert.Contains(workspaceA.WorkspaceId.ToString(), ex.Message);
+
+        // 4. Assert: the rejected row was never persisted
+        using var verifyScope = _fixture.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var exists = await verifyDb.WorkflowExecutions
+            .IgnoreQueryFilters()
+            .AnyAsync(e => e.Id == crossWorkspaceExecution.Id);
+
+        Assert.False(exists, "Entity rejected by the interceptor must not be persisted.");
+    }
+
+    [Fact]
     public async Task GivenWorkflowWithTerminalExecutions_WhenWorkflowDeleted_VersionsAreRemovedAndHistoryIsRetained()
     {
         // 1. Arrange: one active workflow with two published versions and three terminal executions

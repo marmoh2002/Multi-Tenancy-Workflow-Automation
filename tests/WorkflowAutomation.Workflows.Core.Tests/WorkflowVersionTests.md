@@ -1,6 +1,6 @@
 # WorkflowVersion Entity Tests
 
-Unit tests for the `WorkflowVersion` entity in `WorkflowAutomation.Workflows.Core.Entities`. They verify draft snapshot creation, schema and DAG validation error recording, immutability, argument guards, and publication lifecycle rules.
+Unit tests for the `WorkflowVersion` entity in `WorkflowAutomation.Workflows.Core.Entities`. They verify draft snapshot creation, draft updates, schema and DAG validation error recording, immutability, argument guards, and publication lifecycle rules.
 
 ---
 
@@ -35,7 +35,17 @@ Unit tests for the `WorkflowVersion` entity in `WorkflowAutomation.Workflows.Cor
 | `CreateDraft_with_cycle_records_validation_errors_in_json` | Definitions containing cycles (e.g., `a -> b -> a`) do not throw during draft creation; `ValidationErrorsJson` captures the error message containing `"Cycle detected"`; `IsPublished` remains `false`. |
 | `CreateDraft_with_missing_dependency_records_validation_errors_in_json` | Definitions referencing unknown steps do not throw during draft creation; `ValidationErrorsJson` captures the error message; `IsPublished` remains `false`. |
 
-### 3. Publication (`WorkflowVersion.Publish`)
+### 3. Draft Updates (`WorkflowVersion.UpdateDraft`)
+
+| Test | Verified Behavior |
+| :--- | :--- |
+| `UpdateDraft_updates_definition_and_advances_updated_at` | A draft's serialized definition is replaced, `UpdatedAt` advances to the current clock value, and `GetDefinition()` returns the new step set. |
+| `UpdateDraft_with_identical_definition_does_not_advance_updated_at` | Updating a draft with the same serialized definition is a no-op; `UpdatedAt` stays `null`. |
+| `UpdateDraft_recomputes_validation_errors` | An invalid draft (e.g., a cycle) has its `ValidationErrorsJson` cleared after being updated with a valid definition. |
+| `UpdateDraft_rejects_already_published_version` | Updating a published version throws `InvalidOperationException` containing `"Cannot update a published workflow version"`. |
+| `UpdateDraft_rejects_unsupported_schema_version` | Passing an unsupported `definitionSchemaVersion` (e.g., `99`) throws `NotSupportedException`. |
+
+### 4. Publication (`WorkflowVersion.Publish`)
 
 | Test | Verified Behavior |
 | :--- | :--- |
@@ -44,6 +54,9 @@ Unit tests for the `WorkflowVersion` entity in `WorkflowAutomation.Workflows.Cor
 | `Publish_rejects_version_with_validation_errors` | Attempting to publish a version with non-null `ValidationErrorsJson` throws `InvalidOperationException` containing `"validation errors"`. |
 | `Publish_rejects_empty_workflow_definition` | Attempting to publish an empty definition (0 steps) throws `InvalidOperationException` containing `"empty workflow definition"`. |
 | `Publish_rejects_null_clock` | Passing a `null` clock throws `ArgumentNullException`. |
+| `Publish_rejects_null_validator` | Passing a `null` DAG validator throws `ArgumentNullException`. |
+| `Publish_after_UpdateDraft_validates_final_definition_and_rejects_invalid_update` | A valid draft updated to a cyclic definition fails publication with `"validation errors"`, and `IsPublished` stays `false`. |
+| `Publish_after_UpdateDraft_succeeds_when_initially_invalid_draft_is_corrected` | An initially invalid draft corrected via `UpdateDraft()` publishes successfully; `IsPublished` becomes `true` and `ValidationErrorsJson` is `null`. |
 
 ---
 
@@ -53,11 +66,13 @@ Unit tests for the `WorkflowVersion` entity in `WorkflowAutomation.Workflows.Cor
 - **Permissive Draft Persistence:** Drafts with broken topologies or missing dependencies are persisted so users can work iteratively. Errors are stored as a JSON string in `ValidationErrorsJson`.
 - **Identity Invariants:** `Id`, `WorkspaceId`, and `WorkflowId` must all be valid non-empty GUIDs.
 - **Positive Versioning:** Version numbers must be positive integers (`> 0`).
+- **Draft Mutability:** `UpdateDraft` replaces the serialized definition and recomputes DAG validation errors. Identical definitions are no-ops, and unsupported schema versions are rejected with `NotSupportedException`.
 - **Publication Gate:** Publication is strict:
   1. No validation errors allowed (`ValidationErrorsJson is null`).
   2. At least one executable step required (`definition.Steps.Count > 0`).
-- **One-Way Publication:** Once `IsPublished == true`, a version is permanently sealed. It cannot be edited or republished.
-- **Clock-Controlled Timestamps:** `CreatedAt` records initial draft creation; `PublishedAt` and `UpdatedAt` record publication.
+  3. The current snapshot is re-validated at publish time, so updates made after draft creation are included.
+- **One-Way Publication:** Once `IsPublished == true`, a version is permanently sealed. It cannot be edited (`UpdateDraft` throws) or republished.
+- **Clock-Controlled Timestamps:** `CreatedAt` records initial draft creation; `UpdatedAt` records genuine definition changes or publication; `PublishedAt` records publication.
 
 ---
 

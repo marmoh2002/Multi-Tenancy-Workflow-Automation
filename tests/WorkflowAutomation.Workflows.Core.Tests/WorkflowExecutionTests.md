@@ -30,6 +30,9 @@ Unit tests for the `WorkflowExecution` entity in `WorkflowAutomation.Workflows.C
 | `Create_rejects_version_belonging_to_different_workspace` | Throws `InvalidOperationException` if `version.WorkspaceId != workflow.WorkspaceId`. |
 | `Create_rejects_undefined_source` | Throws `ArgumentOutOfRangeException` when passed an undefined enum value (e.g. `(WorkflowExecutionSource)999`). |
 | `Create_rejects_empty_guid_identifiers` | Throws `ArgumentException` if `requestedByUserId` or `scheduleId` is passed as `Guid.Empty`. |
+| `Create_rejects_blank_snapshot` | Theory testing `""` and `"   "`; throws `InvalidOperationException` (message contains "snapshot is empty") when the published version's serialized definition is blank. |
+| `Create_rejects_non_deserializable_snapshot` | Throws `JsonException` when the serialized definition is not valid JSON, ensuring executions cannot pin a corrupt snapshot. |
+| `Create_rejects_unsupported_schema_version` | Throws `NotSupportedException` when the version reports a `DefinitionSchemaVersion` (e.g. `999`) this release cannot deserialize. |
 | `Create_scheduled_execution_requires_schedule_and_occurrence_id` | Throws `ArgumentException` if a `Scheduled` execution lacks a `ScheduleId` or a non-whitespace `ScheduledOccurrenceId`. |
 | `Create_scheduled_execution_rejects_overlong_occurrence_id` | Throws `ArgumentException` if `ScheduledOccurrenceId` exceeds the 200-character column limit. |
 | `Create_manual_or_webhook_rejects_schedule_parameters` | Throws `ArgumentException` if a `Manual` or `Webhook` execution is passed a `ScheduleId` or `ScheduledOccurrenceId`. |
@@ -40,6 +43,7 @@ Unit tests for the `WorkflowExecution` entity in `WorkflowAutomation.Workflows.C
 | :--- | :--- |
 | `Start_transitions_pending_to_running_and_sets_timestamps` | Transitions status from `Pending` to `Running`. Uses an auto-advancing `TestClock` (`advancePerRead: 1s`) to mathematically prove a single clock read occurred: `StartedAt` equals `UpdatedAt`, and `ReadsCount` increments by exactly 1. |
 | `Start_rejects_execution_with_pending_cancellation_request` | Throws `InvalidOperationException` if a cancellation request was recorded before starting. |
+| `Start_rejects_non_pending_executions` | Verifies a second `Start()` on an already running execution throws `InvalidOperationException` and leaves the status unchanged. |
 | `Start_rejects_all_non_pending_statuses` | Systematically asserts `InvalidOperationException` when called on any execution not in `Pending` status (`Running`, `Completed`, `Failed`, or `Cancelled`). |
 
 ### 3. Complete Transition & Race Precedence (`Complete`)

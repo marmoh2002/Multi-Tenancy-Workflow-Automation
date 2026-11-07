@@ -1,6 +1,7 @@
 namespace WorkflowAutomation.Workflows.Core.Tests;
 
 using System;
+using System.Text.Json;
 using WorkflowAutomation.Workflows.Core.Definitions;
 using WorkflowAutomation.Workflows.Core.Entities;
 using WorkflowAutomation.Workflows.Core.Enums;
@@ -256,6 +257,67 @@ public class WorkflowExecutionTests
                 _clock,
                 scheduleId: Guid.Empty,
                 scheduledOccurrenceId: "occ-1"));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Create_rejects_blank_snapshot(string blankSnapshot)
+    {
+        var workflow = CreateTestWorkflow();
+        var version = CreatePublishedVersion(workflow.Id);
+
+        typeof(WorkflowVersion)
+            .GetProperty(nameof(WorkflowVersion.SerializedDefinition))!
+            .SetValue(version, blankSnapshot);
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            WorkflowExecution.Create(
+                Guid.NewGuid(),
+                workflow,
+                version,
+                WorkflowExecutionSource.Manual,
+                _clock));
+
+        Assert.Contains("snapshot is empty", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Create_rejects_non_deserializable_snapshot()
+    {
+        var workflow = CreateTestWorkflow();
+        var version = CreatePublishedVersion(workflow.Id);
+
+        typeof(WorkflowVersion)
+            .GetProperty(nameof(WorkflowVersion.SerializedDefinition))!
+            .SetValue(version, "{ not-valid-json }");
+
+        Assert.ThrowsAny<JsonException>(() =>
+            WorkflowExecution.Create(
+                Guid.NewGuid(),
+                workflow,
+                version,
+                WorkflowExecutionSource.Manual,
+                _clock));
+    }
+
+    [Fact]
+    public void Create_rejects_unsupported_schema_version()
+    {
+        var workflow = CreateTestWorkflow();
+        var version = CreatePublishedVersion(workflow.Id);
+
+        typeof(WorkflowVersion)
+            .GetProperty(nameof(WorkflowVersion.DefinitionSchemaVersion))!
+            .SetValue(version, 999);
+
+        Assert.Throws<NotSupportedException>(() =>
+            WorkflowExecution.Create(
+                Guid.NewGuid(),
+                workflow,
+                version,
+                WorkflowExecutionSource.Manual,
+                _clock));
     }
 
     [Fact]

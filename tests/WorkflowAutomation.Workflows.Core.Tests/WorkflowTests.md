@@ -1,6 +1,6 @@
 # Workflow Entity Tests
 
-Unit tests for the `Workflow` aggregate root in `WorkflowAutomation.Workflows.Core.Entities`. They verify creation invariants, editable details, lifecycle timestamps, and the selection/activation of published `WorkflowVersion` instances.
+Unit tests for the `Workflow` aggregate root in `WorkflowAutomation.Workflows.Core.Entities`. They verify creation invariants, editable details, lifecycle timestamps, the selection/activation of published `WorkflowVersion` instances, and the deletion-preparation transition.
 
 ---
 
@@ -58,6 +58,14 @@ Unit tests for the `Workflow` aggregate root in `WorkflowAutomation.Workflows.Co
 | `ActivateVersion_rejects_version_from_different_workspace` | A version with a mismatched workspace throws `InvalidOperationException` containing `"belongs to a different workspace"`; `ActiveVersionId` stays `null`. |
 | `ActivateVersion_with_same_active_version_is_noop_and_preserves_timestamp` | Re-selecting the current active version is a no-op; `UpdatedAt` is unchanged. |
 
+### 5. Deletion Preparation (`PrepareForDeletion`)
+
+| Test | Verified Behavior |
+| :--- | :--- |
+| `PrepareForDeletion_with_null_clock_throws_ArgumentNullException` | Passing a `null` clock throws `ArgumentNullException`. |
+| `PrepareForDeletion_when_active_with_active_version_clears_active_state_and_updates_timestamp` | An active workflow with a selected version is deactivated: `IsActive` becomes `false`, `ActiveVersionId` becomes `null`, and `UpdatedAt` is set to the current clock value. |
+| `PrepareForDeletion_when_already_inactive_without_active_version_is_noop_and_preserves_timestamp` | An already inactive workflow with no selected version is unchanged, and `UpdatedAt` remains `null`. |
+
 ---
 
 ## Domain Rules Under Test
@@ -69,7 +77,8 @@ Unit tests for the `Workflow` aggregate root in `WorkflowAutomation.Workflows.Co
 - **Version selection precedes activation:** `Activate` requires a non-null `ActiveVersionId`.
 - **Version provenance:** a version must match both `WorkflowId` and `WorkspaceId`.
 - **Publication gate:** only published versions may be selected.
-- **Idempotent transitions:** re-selecting the same version, re-activating an active workflow, and deactivating an inactive workflow are all no-ops that preserve `UpdatedAt`.
+- **Deletion preparation:** `PrepareForDeletion` clears `ActiveVersionId` and `IsActive` so the workflow and its versions can be removed while execution history is retained.
+- **Idempotent transitions:** re-selecting the same version, re-activating an active workflow, deactivating an inactive workflow, and preparing an already inactive workflow for deletion are all no-ops that preserve `UpdatedAt`.
 
 ### Guard Evaluation Order in `ActivateVersion`
 
