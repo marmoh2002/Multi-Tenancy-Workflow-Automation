@@ -1,5 +1,5 @@
 using WorkflowAutomation.Workflows.Core.Definitions;
-
+using WorkflowAutomation.Workflows.Core.Entities;
 using Xunit;
 
 namespace WorkflowAutomation.Workflows.Core.Tests;
@@ -147,5 +147,73 @@ public class DagValidatorTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, error => error.Contains("unknown step"));
+    }
+
+    [Theory]
+    [InlineData(" A")]
+    [InlineData("A ")]
+    [InlineData("  A  ")]
+    public void Untrimmed_step_id_is_invalid(string untrimmedId)
+    {
+        var workflow = Workflow(Step(untrimmedId));
+
+        var result = _validator.Validate(workflow);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.Contains("leading or trailing whitespace"));
+    }
+
+    [Fact]
+    public void Overlong_step_id_is_invalid()
+    {
+        var longId = new string('a', StepDefinition.MaxIdLength + 1);
+        var workflow = Workflow(Step(longId));
+
+        var result = _validator.Validate(workflow);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.Contains($"exceeds maximum length of {StepDefinition.MaxIdLength}"));
+    }
+
+    [Fact]
+    public void Colliding_untrimmed_step_ids_are_invalid()
+    {
+        var workflow = Workflow(
+            Step("step-1"),
+            Step(" step-1")
+        );
+
+        var result = _validator.Validate(workflow);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.Contains("leading or trailing whitespace"));
+    }
+
+    [Fact]
+    public void Untrimmed_dependency_reference_is_invalid()
+    {
+        var workflow = Workflow(
+            Step("A"),
+            Step("B", " A")
+        );
+
+        var result = _validator.Validate(workflow);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.Contains("untrimmed dependency reference"));
+    }
+    [Fact]
+    public void Overlong_dependency_reference_is_invalid()
+    {
+        var longDep = new string('b', StepDefinition.MaxIdLength + 1);
+        var workflow = Workflow(
+            Step("A"),
+            Step("B", longDep)
+        );
+
+        var result = _validator.Validate(workflow);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.Contains($"exceeds maximum length of {StepDefinition.MaxIdLength}"));
     }
 }

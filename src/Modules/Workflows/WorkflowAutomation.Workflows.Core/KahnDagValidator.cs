@@ -25,9 +25,17 @@ public sealed class KahnDagValidator : IDagValidator
             {
                 errors.Add("A step has an empty Id.");
             }
+            else if (step.Id != step.Id.Trim())
+            {
+                errors.Add($"Step '{step.Id}' contains leading or trailing whitespace.");
+            }
+            else if (step.Id.Length > StepDefinition.MaxIdLength)
+            {
+                errors.Add($"Step '{step.Id}' exceeds maximum length of {StepDefinition.MaxIdLength} characters.");
+            }
             else if (!knownIds.Add(step.Id))
             {
-                errors.Add($"Duplicate step id '{step.Id}'.");
+                errors.Add($"Duplicate step id {step.Id}.");
             }
         }
 
@@ -45,14 +53,26 @@ public sealed class KahnDagValidator : IDagValidator
 
             foreach (var dependency in step.DependsOn)
             {
-                if (!knownIds.Contains(dependency))
+                if (string.IsNullOrWhiteSpace(dependency))
                 {
-                    errors.Add($"Step '{step.Id}' depends on unknown step '{dependency}'.");
+                    errors.Add($"Step {step.Id} has an empty or whitespace dependency reference.");
+                }
+                else if (dependency != dependency.Trim())
+                {
+                    errors.Add($"Step {step.Id} has an untrimmed dependency reference '{dependency}'.");
+                }
+                else if (dependency.Length > StepDefinition.MaxIdLength)
+                {
+                    errors.Add($"Step '{step.Id}' has a dependency reference '{dependency}' that exceeds maximum length of {StepDefinition.MaxIdLength} characters.");
+                }
+                else if (!knownIds.Contains(dependency))
+                {
+                    errors.Add($"Step {step.Id} depends on unknown step {dependency}.");
                 }
 
                 if (!seenDependencies.Add(dependency))
                 {
-                    errors.Add($"Step '{step.Id}' lists dependency '{dependency}' more than once.");
+                    errors.Add($"Step {step.Id} lists dependency {dependency} more than once.");
                 }
             }
         }
@@ -62,7 +82,7 @@ public sealed class KahnDagValidator : IDagValidator
             return DagValidationResult.Failure(errors);
         }
 
-        // 3. Build graph structures used by Kahn's algorithm.
+        // 3. Build graph structures used by Kahns algorithm.
         //
         // adjacency:
         //   key = prerequisite step

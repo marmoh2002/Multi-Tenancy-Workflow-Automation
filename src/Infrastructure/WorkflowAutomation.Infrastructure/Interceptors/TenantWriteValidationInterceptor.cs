@@ -41,34 +41,65 @@ public sealed class TenantWriteValidationInterceptor : SaveChangesInterceptor
     }
     private void ValidateWorkspaceOwnership(DbContext context)
     {
-        if (!_workspaceContext.HasCurrentWorkspace)
+        // Ensure tracked states and property changes are up to date.
+        context.ChangeTracker.DetectChanges();
+
+        var entries = context.ChangeTracker
+            .Entries<IMustHaveWorkspace>()
+            .Where(e => e.State is
+                EntityState.Added or
+                EntityState.Modified or
+                EntityState.Deleted)
+            .ToList();
+
+        if (entries.Count == 0)
         {
-            var hasTenantWrites = context.ChangeTracker.Entries<IMustHaveWorkspace>()
-                .Any(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted);
-
-            if (hasTenantWrites)
-            {
-                throw new InvalidOperationException(
-                    "Cannot mutate workspace-scoped entities without an active workspace context.");
-            }
-
             return;
         }
 
-        var currentWorkspaceId = _workspaceContext.CurrentWorkspaceId!.Value;
-
-        foreach (var entry in context.ChangeTracker.Entries<IMustHaveWorkspace>())
+        if (!_workspaceContext.HasCurrentWorkspace)
         {
-            if (entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            throw new InvalidOperationException(
+                "Cannot mutate workspace-scoped entities " +
+                "without an active workspace context.");
+        }
+
+        var currentWorkspaceId =
+            _workspaceContext.CurrentWorkspaceId
+            ?? throw new InvalidOperationException(
+                "The workspace context reports an active workspace " +
+                "but provides no workspace ID.");
+
+        foreach (var entry in entries)
+        {
+            // All writes must belong to the current workspace.
+            if (entry.Entity.WorkspaceId != currentWorkspaceId)
             {
-                if (entry.Entity.WorkspaceId != currentWorkspaceId)
-                {
-                    throw new InvalidOperationException(
-                        $"Cross-workspace write detected: Cannot {entry.State} entity '{entry.Entity.GetType().Name}' " +
-                        $"belonging to workspace '{entry.Entity.WorkspaceId}' while operating in workspace '{currentWorkspaceId}'.");
-                }
+                throw new InvalidOperationException(
+                    $"Cross-workspace write detected: Cannot {entry.State} " +
+                    $"entity '{entry.Metadata.ClrType.Name}' belonging to " +
+                    $"workspace '{entry.Entity.WorkspaceId}' while operating " +
+                    $"in workspace '{currentWorkspaceId}'.");
+            }
+
+            // Newly added entities have no persisted ownership to check.
+            if (entry.State == EntityState.Added)
+            {
+                continue;
+            }
+
+            var originalWorkspaceId = entry
+                .Property(nameof(IMustHaveWorkspace.WorkspaceId))
+                .OriginalValue;
+
+            if (!Equals(originalWorkspaceId, currentWorkspaceId))
+            {
+                throw new InvalidOperationException(
+                    $"Cross-workspace write detected: Entity " +
+                    $"'{entry.Metadata.ClrType.Name}' originally belonged " +
+                    $"to workspace '{originalWorkspaceId}' but the active " +
+                    $"workspace is '{currentWorkspaceId}'.");
             }
         }
     }
-
 }

@@ -87,8 +87,8 @@ WorkflowAutomation.slnx
 │           └── WorkflowAutomation.Workflows.Core/     # KahnDagValidator, Workflow models, DAG validation
 │
 └── tests/
-    ├── WorkflowAutomation.Workflows.Core.Tests/       # 8 passing xUnit DAG tests
-    └── WorkflowAutomation.Integration.Tests/          # 4 passing integration tests (Global Query Filters & DI Scoping)
+    ├── WorkflowAutomation.Workflows.Core.Tests/       # 214 passing xUnit workflow/domain tests
+    └── WorkflowAutomation.Integration.Tests/          # 103 passing integration tests (PostgreSQL via Testcontainers)
 ```
 
 ### Target State
@@ -302,7 +302,24 @@ Pure C# message contracts under `Execution.Commands` (`StartExecution`, `Execute
 ### 5. Workflows Module Domain (`WorkflowAutomation.Workflows.Core`)
 <details>
 <summary>details</summary>
-- *Kahn DAG Validator (`KahnDagValidator`)*: Validates acyclic structure and computes topological execution orders using BFS queue traversal.
+- *Kahn DAG Validator (`KahnDagValidator`)*: Validates acyclic structure, computes topological execution orders using BFS queue traversal, and enforces step & dependency identifier invariants (non-empty, trimmed, max length of 100 characters, duplicate rejection).
+- *Workflow & Version Aggregates*: `Workflow` and immutable `WorkflowVersion` managing serialized DAG definitions, versioning, and draft lifecycles.
+- *Workflow Execution (`WorkflowExecution`)*: Runtime state machine supporting pending, running, completed, failed, and cancelled transitions; idempotent cancellation requests; point-of-no-return locking (`IsCancellable`); and "Completion Wins" race resolution. Creation pins an immutable snapshot of the workflow/version definition and hashes the exact snapshot text.
+- *Workflow Step Execution (`WorkflowStepExecution`)*: Per-step attempt tracking with pending, running, completed, failed, cancelled, and skipped transitions; status/timestamp consistency, retryable failure reasons, and completed-step output metadata. Enforces one row per `(ExecutionId, StepId, AttemptNumber)` and cascades with the parent execution.
+
+**Execution snapshot validation layers**
+
+| Layer | Check | Enforced by |
+|:---|:---|:---|
+| Text presence | `DefinitionSnapshot <> ''` | PostgreSQL `CK_WorkflowExecutions_DefinitionSnapshot_NotEmpty` |
+| JSON wire format | `jsonb_typeof("DefinitionSnapshot"::jsonb) = 'object'` | PostgreSQL `CK_WorkflowExecutions_DefinitionSnapshot_IsObject`; the column remains `text` |
+| Object contract | Supported `DefinitionSchemaVersion`, JSON object with a `steps` array, structurally valid definition | `WorkflowVersion.GetDefinition()` called by `WorkflowExecution.Create` before pinning |
+| Tamper integrity | Byte-exact SHA-256 of the stored snapshot | `HasIntactSnapshot()` / `DefinitionHash` |
+
+Validation is read-only: the snapshot is never re-serialized or normalized, so the hash continues to match the stored bytes. The execution checks are independent of the source version because execution history outlives workflow/version deletion.
+
+PostgreSQL integration tests cover the execution snapshot round-trip, tenant-scoped reads, raw-insert check constraints, and retention of terminal execution history (including step attempts) after workflow deletion. The step-execution suite covers lifecycle round-trips, attempt uniqueness, tenant isolation, composite foreign keys, cascade deletion, and all raw-insert check constraints.
+
 - *Domain Models*: `WorkflowDefinition`, `StepDefinition`, `WorkflowExecutionContext`, `DagValidationResult`.
 </details>
 
@@ -311,7 +328,7 @@ Pure C# message contracts under `Execution.Commands` (`StartExecution`, `Execute
 <details>
 
 <summary>details</summary>
-- *`ApplicationDbContext`*: Unified EF Core context inheriting `IdentityDbContext<ApplicationUser, ApplicationRole, Guid>`. Maps the Identity and Workspaces schemas; Workflows mappings arrive in Phase 3.
+- *`ApplicationDbContext`*: Unified EF Core context inheriting `IdentityDbContext<ApplicationUser, ApplicationRole, Guid>`. Maps the Identity, Workspaces, and Workflows schemas, including workflow versions and execution snapshots.
 
 - *Fail-Closed Global Query Filters*:
 
@@ -331,6 +348,9 @@ Pure C# message contracts under `Execution.Commands` (`StartExecution`, `Execute
   - `AddInfrastructurePersistence(connectionString)` registers `WorkspaceContext` (Scoped), forwards `IWorkspaceContext` to the same instance within the scope, and registers `ApplicationDbContext` with Scoped, unpooled lifetime using Npgsql PostgreSQL provider.
 - *EF Migrations*:
   - `InitialIdentityAndWorkspaces` creates the ASP.NET Core Identity tables plus `Workspaces`, `WorkspaceMemberships`, and `WorkspaceConnections`, including their indexes and restrict-delete foreign keys. Integration tests apply this migration through `MigrateAsync`.
+  - `AddWorkflowExecutions` creates `WorkflowExecutions` with its immutable snapshot columns, indexes, and the JSON-object snapshot check.
+  - `AddDefinitionSnapshotNotEmptyConstraint` adds the explicit non-empty text check additively; it does not replace the JSON-object check.
+  - `AddWorkflowStepExecutions` creates `WorkflowStepExecutions` with its workspace and composite execution foreign keys, the unique `(ExecutionId, StepId, AttemptNumber)` index, lifecycle check constraints, and the `xmin` concurrency token.
 </details>
 
 > [!IMPORTANT]
@@ -343,15 +363,21 @@ Pure C# message contracts under `Execution.Commands` (`StartExecution`, `Execute
 
 <summary>details</summary>
 
-22 passing xUnit test cases across two test projects:
-- *`WorkflowAutomation.Workflows.Core.Tests` (8 tests)*:
-  - Empty workflows, linear dependency chains (A→B→C), diamond fan-out/fan-in graphs.
-  - Disconnected valid subgraphs and single-node graphs.
-  - Cyclic graphs, direct self-loops, and invalid/missing dependency references.
-- *`WorkflowAutomation.Integration.Tests` (14 tests)*:
-  - `GlobalQueryFilterTests` (3 tests): Verifies fail-closed behavior (unauthenticated context yields 0 records), cross-tenant isolation (Workspace A cannot see Workspace B data), and the controlled `IgnoreQueryFilters` bootstrap path on SQLite in-memory.
+317 passing xUnit test cases across two test projects:
+- *`WorkflowAutomation.Workflows.Core.Tests` (214 tests)*:
+  - DAG validation, workflow/version aggregate lifecycles, definition serialization, `WorkflowExecution` creation, snapshot, and state-machine rules, and `WorkflowStepExecution` lifecycle transitions, invariants, and terminal immutability.
+- *`WorkflowAutomation.Integration.Tests` (103 tests)*:
+  - `GlobalQueryFilterTests` (3 tests): Verifies fail-closed behavior (unauthenticated context yields 0 records), cross-tenant isolation (Workspace A cannot see Workspace B data), and the controlled `IgnoreQueryFilters` bootstrap path.
   - `TenantWriteValidationInterceptorTests` (9 tests): Verifies write-side isolation on PostgreSQL via Testcontainers, including matching-workspace writes, cross-workspace inserts, updates, and deletes, missing workspace context, synchronous and asynchronous `SaveChanges` paths, and scope isolation.
   - `DependencyInjectionLifetimeTests` (2 tests): Verifies `WorkspaceContext` and `IWorkspaceContext` resolve to the exact same reference within a scope, and that distinct scopes remain completely isolated.
+  - `WorkflowPersistenceTests` (10 tests): Verifies workflow/version persistence, `jsonb` round-trips, unique and composite foreign keys, tenant filters, and cascade/restrict deletion behavior.
+  - `WorkflowConstraintTests` (12 tests): Verifies PostgreSQL check constraints for workflow names, active-version consistency, version numbers/schema versions, JSON definitions, publication metadata, and deletion cascades.
+  - `WorkflowConcurrencyTests` (7 tests): Verifies optimistic concurrency (`xmin`) across concurrent draft edits, publication, deletion, and workflow metadata updates.
+  - `WorkflowVersionImmutabilityInterceptorTests` (9 tests): Verifies draft mutability, publication transitions, published-version immutability, and independent vs. cascade deletion rules.
+  - `WorkflowExecutionPersistenceTests` (3 tests): Verifies immutable snapshot round-tripping, cross-tenant execution isolation, and retention of terminal executions and their step attempts after workflow deletion.
+  - `WorkflowExecutionConstraintTests` (17 tests): Verifies PostgreSQL check constraints for execution names, versions, snapshots, hashes, status/timestamps, cancellation metadata, and enums through raw SQL inserts.
+  - `WorkflowStepExecutionPersistenceTests` (10 tests): Verifies step-attempt lifecycle round-trips, per-attempt uniqueness, tenant query isolation, cross-workspace write rejection, composite foreign-key enforcement, and cascade deletion with the parent execution.
+  - `WorkflowStepExecutionConstraintTests` (21 tests): Verifies all 13 PostgreSQL check constraints for step identifiers, attempt numbers, status/timestamp consistency, exclusive finish timestamps, and conditional fields through raw SQL inserts.
 </details>
 ---
 
@@ -388,11 +414,11 @@ dotnet build WorkflowAutomation.slnx
 dotnet test WorkflowAutomation.slnx
 ```
 
-All *22 tests* (8 DAG validation unit tests + 14 integration tests) should pass:
-- `WorkflowAutomation.Workflows.Core.Tests`: 8 passed
-- `WorkflowAutomation.Integration.Tests`: 14 passed
+All *317 tests* (214 workflow/domain unit tests + 103 integration tests) should pass:
+- `WorkflowAutomation.Workflows.Core.Tests`: 214 passed
+- `WorkflowAutomation.Integration.Tests`: 103 passed
 
-The integration suite requires Docker because `TenantWriteValidationInterceptorTests` starts a disposable PostgreSQL container through Testcontainers.
+The integration suite requires Docker because the PostgreSQL-backed test classes start disposable PostgreSQL containers through Testcontainers.
 
 ---
 
@@ -410,6 +436,8 @@ The integration suite requires Docker because `TenantWriteValidationInterceptorT
 | *Error Handling & Control Flow* | Throwing C# exceptions for expected domain failures (validation errors, conflicts, state violations) degrades performance and conceals execution paths. | Functional Result Pattern via `Result`, `Result<TValue>`, `Error`, and `ErrorType` enum (`Failure`, `Validation`, `NotFound`, `Conflict`). | Explicit type-safe railway-oriented flow; straightforward mapping to HTTP status codes (400, 404, 409). |
 | *Deterministic Time Abstraction* | Calling `DateTime.UtcNow` directly creates non-deterministic domain logic, making time-sensitive unit tests (expiry, locks, intervals) difficult to write and flaky. | `IClock` abstraction with default `SystemClock` for production and mockable implementations for tests. | Reliable, deterministic unit tests for time-critical workflows. |
 | *Unified Database Context* | Managing separate DbContexts across modules requires distributed 2-phase commit transactions or leads to transaction fragmentation. | Single unified `ApplicationDbContext : IdentityDbContext` in `WorkflowAutomation.Infrastructure` sharing a single PostgreSQL database. | True ACID transactions across aggregates within the modular monolith. |
+| *Execution State Machine & Idempotent Cancellation* | Message queue retries and worker completion races cause false validation errors, contradictory terminal states (`Status = Completed` with `CancellationRequestedAt` populated), or crashes when cancelling workflows. | Idempotent short-circuiting in `RequestCancellation`, "Completion Wins" precedence that resets cancellation fields upon completion/failure, and explicit `IsCancellable` point-of-no-return locking. | Guarantees safe at-least-once message processing, eliminates Dead Letter Queue false positives, and maintains unambiguous audit records. |
+| *Snapshot Integrity & Layered Validation* | PostgreSQL `jsonb` normalizes whitespace and reorders keys, altering SHA-256 checks; a `text` snapshot can still be empty, malformed, a non-object, or structurally undecodable, and database checks alone cannot deserialize into the domain type. | Store `DefinitionSnapshot` as `text`; enforce `DefinitionSnapshot <> ''` and `jsonb_typeof("DefinitionSnapshot"::jsonb) = 'object'` in PostgreSQL; call `WorkflowVersion.GetDefinition()` in `WorkflowExecution.Create` before pinning; compute byte-exact SHA-256 verified via `HasIntactSnapshot()`. | Each layer catches a different failure mode: text presence, wire-format validity, and object-contract compatibility. Execution rows remain self-validating after their source workflow/version is deleted, while read-only validation preserves the exact bytes used for tamper detection. |
 
 <details>
 <summary>Planned Architectural Decisions (Phases 3–7)</summary>
@@ -434,7 +462,7 @@ The integration suite requires Docker because `TenantWriteValidationInterceptorT
 |:---|:---|:---:|:---|
 | *1* | *Solution Structure & Core Migration* | ✅ Complete | Created `WorkflowAutomation.slnx`. Established `Shared.Kernel`, `Shared.Contracts`, `Workflows.Core`, `Identity.Core`, and `Workspaces.Core`. Verified all 8 unit tests pass. |
 | *2* | *Identity, Workspaces & Multi-Tenancy Persistence* | ✅ Complete | `ApplicationDbContext` in `WorkflowAutomation.Infrastructure`, EF entity configurations (Workspace, Membership, Connection), Global Query Filters, DI registration, `InitialIdentityAndWorkspaces` migration, and 14 passing integration tests. |
-| *3* | *Workflow & Version Persistence* | ⚪ Planned | `Workflow`, `WorkflowVersion` (immutable definitions), `WorkflowExecution`, `WorkflowStepExecution` (including `CancellationRequestedAt` and `CancellationReason` columns). |
+| *3* | *Workflow & Version Persistence* | ⚪ Planned | `Workflow`, `WorkflowVersion` (immutable definitions), `WorkflowExecution` (including `CancellationRequestedAt` and `CancellationReason` columns), `WorkflowStepExecution`. |
 | *4* | *API Idempotency & Bus Outbox* | ⚪ Planned | `IdempotencyRecord`. API-side Bus Outbox. Execution creation transaction with deduplication. |
 | *5* | *Saga & Fail-Fast Orchestration* | ⚪ Planned | `WorkflowExecutionSaga`. `IWorkflowEngine` DAG step selector. Fail-fast cancellation and settling logic. Conditional UPDATE guard for `CancellationRequestedAt`. |
 | *6* | *Worker Host & Step Executors* | ⚪ Planned | MassTransit worker host. Consumer Outbox. `IStepExecutor` interface. `LogStepExecutor`, `HttpStepExecutor`. Step executor idempotency keys (`{ExecutionId}:{StepId}:{AttemptNumber}`). |
