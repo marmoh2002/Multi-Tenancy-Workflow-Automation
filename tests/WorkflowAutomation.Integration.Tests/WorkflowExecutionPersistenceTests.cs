@@ -234,6 +234,9 @@ public class WorkflowExecutionPersistenceTests : IClassFixture<PostgreSqlFixture
         var completedExecutionId = Guid.NewGuid();
         var failedExecutionId = Guid.NewGuid();
         var cancelledExecutionId = Guid.NewGuid();
+        var completedStepId = Guid.NewGuid();
+        var failedStepId = Guid.NewGuid();
+        var cancelledStepId = Guid.NewGuid();
         string expectedCompletedSnapshot;
 
         using (var scope = _fixture.CreateScope())
@@ -303,6 +306,16 @@ public class WorkflowExecutionPersistenceTests : IClassFixture<PostgreSqlFixture
                 _clock,
                 requestedByUserId: userId);
             completed.Start(_clock);
+
+            // Step attempts can only be created while the parent is Pending or Running,
+            // so record them before each execution reaches its terminal state.
+            var completedStep = completed.CreateStepExecution(
+                completedStepId,
+                "step-1",
+                attemptNumber: 1,
+                _clock);
+            completedStep.Start(_clock);
+            completedStep.Complete("""{"logged":true}""", _clock);
             completed.Complete(_clock);
 
             var failed = WorkflowExecution.Create(
@@ -313,6 +326,14 @@ public class WorkflowExecutionPersistenceTests : IClassFixture<PostgreSqlFixture
                 _clock,
                 requestedByUserId: userId);
             failed.Start(_clock);
+
+            var failedStep = failed.CreateStepExecution(
+                failedStepId,
+                "step-1",
+                attemptNumber: 1,
+                _clock);
+            failedStep.Start(_clock);
+            failedStep.Fail("Downstream timeout.", isRetryable: true, _clock);
             failed.Fail("step-1", "Step failed.", _clock);
 
             var cancelled = WorkflowExecution.Create(
@@ -322,6 +343,15 @@ public class WorkflowExecutionPersistenceTests : IClassFixture<PostgreSqlFixture
                 WorkflowExecutionSource.Manual,
                 _clock,
                 requestedByUserId: userId);
+            cancelled.Start(_clock);
+
+            var cancelledStep = cancelled.CreateStepExecution(
+                cancelledStepId,
+                "step-1",
+                attemptNumber: 1,
+                _clock);
+            cancelledStep.Start(_clock);
+            cancelledStep.Cancel(_clock);
             cancelled.RequestCancellation("Cancelled by test.", _clock);
             cancelled.MarkCancelled(_clock);
 
@@ -332,6 +362,10 @@ public class WorkflowExecutionPersistenceTests : IClassFixture<PostgreSqlFixture
             db.Workflows.Add(workflow);
             db.WorkflowVersions.AddRange(version1, version2);
             db.WorkflowExecutions.AddRange(completed, failed, cancelled);
+            await db.SaveChangesAsync();
+
+            // Persist the attempts after their parent executions exist.
+            db.WorkflowStepExecutions.AddRange(completedStep, failedStep, cancelledStep);
             await db.SaveChangesAsync();
 
             workflow.ActivateVersion(version1, _clock);
@@ -394,6 +428,36 @@ public class WorkflowExecutionPersistenceTests : IClassFixture<PostgreSqlFixture
 
             var persistedCompleted = executions.Single(e => e.Id == completedExecutionId);
             Assert.Equal(expectedCompletedSnapshot, persistedCompleted.DefinitionSnapshot);
+
+            // Step attempts are children of the retained executions, not of the workflow,
+            // so they survive the workflow deletion alongside their parent executions.
+            var stepExecutions = await db.WorkflowStepExecutions
+                .Where(s =>
+                    s.Id == completedStepId ||
+                    s.Id == failedStepId ||
+                    s.Id == cancelledStepId)
+                .ToListAsync();
+
+            Assert.Equal(3, stepExecutions.Count);
+
+            var persistedCompletedStep = Assert.Single(
+                stepExecutions,
+                s => s.ExecutionId == completedExecutionId);
+            Assert.Equal(completedStepId, persistedCompletedStep.Id);
+            Assert.Equal(WorkflowStepExecutionStatus.Completed, persistedCompletedStep.Status);
+
+            var persistedFailedStep = Assert.Single(
+                stepExecutions,
+                s => s.ExecutionId == failedExecutionId);
+            Assert.Equal(failedStepId, persistedFailedStep.Id);
+            Assert.Equal(WorkflowStepExecutionStatus.Failed, persistedFailedStep.Status);
+            Assert.True(persistedFailedStep.IsRetryable);
+
+            var persistedCancelledStep = Assert.Single(
+                stepExecutions,
+                s => s.ExecutionId == cancelledExecutionId);
+            Assert.Equal(cancelledStepId, persistedCancelledStep.Id);
+            Assert.Equal(WorkflowStepExecutionStatus.Cancelled, persistedCancelledStep.Status);
         }
     }
 }

@@ -1,6 +1,6 @@
 # WorkflowAutomation.Integration.Tests
 
-Integration test suite for PostgreSQL persistence, EF Core global query filters, multi-tenant isolation boundaries, workflow execution snapshots and retention, and dependency injection container lifetimes.
+Integration test suite for PostgreSQL persistence, EF Core global query filters, multi-tenant isolation boundaries, workflow execution snapshots and retention, step execution lifecycle and constraints, and dependency injection container lifetimes.
 
 ---
 
@@ -104,13 +104,46 @@ Detailed test notes: [WorkflowExecutionConstraintTests.md](WorkflowExecutionCons
 * **Enum Guards**:
   * Rejects undefined `Status` and `Source` values.
 
+### 8. Workflow Step Execution Persistence (`WorkflowStepExecutionPersistenceTests.cs`)
+Verifies step-attempt lifecycle persistence, per-attempt uniqueness, tenant isolation, and foreign-key behavior.
+
+Detailed test notes: [WorkflowStepExecutionPersistenceTests.md](WorkflowStepExecutionPersistenceTests.md).
+
+* **Lifecycle Round-Trips**:
+  * Persists and reloads `Pending`, `Completed`, `Failed`, `Cancelled`, and `Skipped` attempts, verifying timestamps, `ErrorMessage` trimming, `OutputMetadata`, `IsRetryable`, and the computed `FinishedAt`.
+* **Attempt Uniqueness**:
+  * Rejects a duplicate `(ExecutionId, StepId, AttemptNumber)` with SQLSTATE `23505` on `IX_WorkflowStepExecutions_ExecutionId_StepId_AttemptNumber`, and confirms only the original row remains.
+* **Tenant Isolation**:
+  * Global query filters return only the active workspace's attempts, fail closed without context, and `IgnoreQueryFilters()` confirms both tenants' rows physically exist.
+* **Write Boundary**:
+  * `TenantWriteValidationInterceptor` rejects a step attempt targeting another workspace's execution before it reaches PostgreSQL.
+* **Composite Foreign Key**:
+  * A raw insert claiming a different `WorkspaceId` than its parent execution is rejected with SQLSTATE `23503` by `FK_WorkflowStepExecutions_Executions_WorkspaceId_ExecutionId`.
+* **Cascade Deletion**:
+  * Deleting a parent execution cascades all of its attempts, including retries, while the workflow and version remain.
+
+### 9. Workflow Step Execution Check Constraints (`WorkflowStepExecutionConstraintTests.cs`)
+Verifies all 13 PostgreSQL check constraints on `WorkflowStepExecutions` through raw inserts that bypass EF Core and the domain.
+
+Detailed test notes: [WorkflowStepExecutionConstraintTests.md](WorkflowStepExecutionConstraintTests.md).
+
+* **StepId and AttemptNumber Integrity**:
+  * Rejects untrimmed or empty `StepId` values and non-positive `AttemptNumber` values.
+* **Enum Guard**:
+  * Rejects undefined `Status` values.
+* **Status and Timestamp Consistency**:
+  * Rejects timestamps on `Pending`, a missing `StartedAt` on `Running`, missing timestamps on `Completed`, missing timestamps or a blank reason on `Failed`, a missing `CancelledAt` on `Cancelled`, and invalid timestamps on `Skipped`.
+  * Rejects rows carrying both `CompletedAt` and `CancelledAt`.
+* **Conditional Fields**:
+  * Rejects `ErrorMessage` outside `Failed`, `OutputMetadata` outside `Completed`, and `IsRetryable` outside `Failed`.
+
 ---
 
 ## Database Strategy
 
 The suite uses PostgreSQL via Testcontainers for every database-bound test:
 
-* **PostgreSQL via Testcontainers** (`GlobalQueryFilterTests`, `TenantWriteValidationInterceptorTests`, `WorkflowPersistenceTests`, `WorkflowConstraintTests`, `WorkflowConcurrencyTests`, `WorkflowVersionImmutabilityInterceptorTests`, `WorkflowExecutionPersistenceTests`, `WorkflowExecutionConstraintTests`):
+* **PostgreSQL via Testcontainers** (`GlobalQueryFilterTests`, `TenantWriteValidationInterceptorTests`, `WorkflowPersistenceTests`, `WorkflowConstraintTests`, `WorkflowConcurrencyTests`, `WorkflowVersionImmutabilityInterceptorTests`, `WorkflowExecutionPersistenceTests`, `WorkflowExecutionConstraintTests`, `WorkflowStepExecutionPersistenceTests`, `WorkflowStepExecutionConstraintTests`):
   * Uses `PostgreSqlFixture` to start a disposable `postgres:15-alpine` container, build the production DI container, and apply the committed EF migrations through `MigrateAsync`.
   * Exercises the Npgsql provider and the actual migration baseline rather than a model-generated schema.
 
