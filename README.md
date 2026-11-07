@@ -48,6 +48,7 @@ The platform is a *modular monolith* with three separate runtime hosts sharing a
 | *Runtime* | .NET 10 / C# |
 | *Database* | PostgreSQL 15 (via Docker) |
 | *Messaging* | RabbitMQ + MassTransit 8 |
+| *Application* | MediatR 14.3 + FluentValidation 12.2 |
 | *Scheduling* | Quartz.NET |
 | *ORM* | Entity Framework Core |
 | *Authentication* | ASP.NET Core Identity + JWT Bearer |
@@ -114,8 +115,8 @@ src/
 │   │
 │   └── Workflows/
 │       ├── WorkflowAutomation.Workflows.Core/         # Workflow, WorkflowVersion, DAG validation
-│       ├── WorkflowAutomation.Workflows.Application/  # IWorkflowEngine, execution coordination
-│       └── WorkflowAutomation.Workflows.Infrastructure/ # Saga, consumers, step executors
+│       ├── WorkflowAutomation.Workflows.Application/  # CQRS commands/queries, pipeline behaviors, IWorkflowEngine, execution coordination
+│       └── WorkflowAutomation.Workflows.Infrastructure/ # Persistence implementations, read models, DI registration
 │
 ├── Infrastructure/
 │   └── WorkflowAutomation.Infrastructure/             # ApplicationDbContext, outbox, migrations
@@ -253,9 +254,13 @@ graph TD
 - *Strictly Acyclic Flow*: Every dependency path flows inward and terminates at `Shared.Kernel`. No circular references exist across modules or layers.
 ---
 
-## Three Architectural Layers of Defense
+## Defense in Depth: Every Layer Protects Data
 
-To achieve complete tenant isolation on writes, modern systems use a defense-in-depth approach across **three** layers:
+Tenant isolation and data integrity are enforced independently at every layer of the request path. Each layer assumes the one above it can fail: a missed check is still contained by the next. Solid borders mark controls that are implemented and covered by the current test suite; dashed borders mark roadmap contracts for Phases 4–9.
+
+![Defense-in-depth diagram](./imgs/DataProtectionLayers.svg)
+
+For the focused three-layer view of write-side tenant isolation, see:
 
 ![Diagram](./imgs/TenantIsolationDefense.svg)
 
@@ -440,7 +445,7 @@ The integration suite requires Docker because the PostgreSQL-backed test classes
 | *Snapshot Integrity & Layered Validation* | PostgreSQL `jsonb` normalizes whitespace and reorders keys, altering SHA-256 checks; a `text` snapshot can still be empty, malformed, a non-object, or structurally undecodable, and database checks alone cannot deserialize into the domain type. | Store `DefinitionSnapshot` as `text`; enforce `DefinitionSnapshot <> ''` and `jsonb_typeof("DefinitionSnapshot"::jsonb) = 'object'` in PostgreSQL; call `WorkflowVersion.GetDefinition()` in `WorkflowExecution.Create` before pinning; compute byte-exact SHA-256 verified via `HasIntactSnapshot()`. | Each layer catches a different failure mode: text presence, wire-format validity, and object-contract compatibility. Execution rows remain self-validating after their source workflow/version is deleted, while read-only validation preserves the exact bytes used for tamper detection. |
 
 <details>
-<summary>Planned Architectural Decisions (Phases 3–7)</summary>
+<summary>Planned Architectural Decisions (Phases 3–9)</summary>
 
 | Area / Decision | Problem Encountered | Solution Proposed / Chosen | Architectural Rationale & Trade-offs |
 |:---|:---|:---|:---|
@@ -462,13 +467,16 @@ The integration suite requires Docker because the PostgreSQL-backed test classes
 |:---|:---|:---:|:---|
 | *1* | *Solution Structure & Core Migration* | ✅ Complete | Created `WorkflowAutomation.slnx`. Established `Shared.Kernel`, `Shared.Contracts`, `Workflows.Core`, `Identity.Core`, and `Workspaces.Core`. Verified all 8 unit tests pass. |
 | *2* | *Identity, Workspaces & Multi-Tenancy Persistence* | ✅ Complete | `ApplicationDbContext` in `WorkflowAutomation.Infrastructure`, EF entity configurations (Workspace, Membership, Connection), Global Query Filters, DI registration, `InitialIdentityAndWorkspaces` migration, and 14 passing integration tests. |
-| *3* | *Workflow & Version Persistence* | ✅ Complete | `Workflow`, `WorkflowVersion` (immutable definitions), `WorkflowExecution` (including `CancellationRequestedAt` and `CancellationReason` columns), `WorkflowStepExecution`, EF migrations, and execution/step persistence test coverage. |
-| *4* | *API Idempotency & Bus Outbox* | ⚪ Planned | `IdempotencyRecord`. API-side Bus Outbox. Execution creation transaction with deduplication. |
-| *5* | *Saga & Fail-Fast Orchestration* | ⚪ Planned | `WorkflowExecutionSaga`. `IWorkflowEngine` DAG step selector. Fail-fast cancellation and settling logic. Conditional UPDATE guard for `CancellationRequestedAt`. |
-| *6* | *Worker Host & Step Executors* | ⚪ Planned | MassTransit worker host. Consumer Outbox. `IStepExecutor` interface. `LogStepExecutor`, `HttpStepExecutor`. Step executor idempotency keys (`{ExecutionId}:{StepId}:{AttemptNumber}`). |
-| *7* | *Scheduler Host & Quartz.NET* | ⚪ Planned | Quartz.NET scheduled jobs. Deterministic occurrence identity. Misfire policies. |
-| *8* | *API Endpoints & JWT Security* | ⚪ Planned | ASP.NET Core API host. JWT bearer auth. Workspace middleware. Workflow and execution endpoints. |
-| *9* | *Integration Testing* | ⚪ Planned | Testcontainers (PostgreSQL + RabbitMQ). Concurrency, fail-fast, crash recovery, conditional UPDATE guards, Consumer Outbox atomicity, and workspace isolation tests. |
+| *3* | *Workflow, Version & Execution Persistence* | ✅ Complete | `Workflow`, `WorkflowVersion` (immutable definitions), `WorkflowExecution` (including `CancellationRequestedAt` and `CancellationReason` columns), `WorkflowStepExecution`, EF migrations, and execution/step persistence test coverage. |
+| *4* | *Application/CQRS Control Plane* | 🟡 In progress (planning) | `Workflows.Application` and `Workflows.Infrastructure`; MediatR 14.3.0 + FluentValidation 12.2.0; workflow/version commands and queries; validation/logging/workspace-context/transaction pipeline behaviors; execution read models with the `(Snapshot)` suffix; concurrency-safe per-workflow version allocation; workflow-deletion execution guard; application-level exception translation; PostgreSQL integration coverage. Detailed plan: [`phase4_plan.md`](../phase4_plan.md). |
+| *5* | *HTTP API Vertical Slice* | ⚪ Planned | ASP.NET Core API host, JWT bearer auth, workspace resolution middleware, workflow and execution endpoints, `ProblemDetails` mapping. |
+| *6* | *Execution Engine & DAG Runtime* | ⚪ Planned | `IWorkflowEngine` DAG step selector, in-process execution coordination, retry scheduling, run records. |
+| *7* | *Messaging, Saga, Outbox & Idempotency* | ⚪ Planned | `WorkflowExecutionSaga`, MassTransit Bus/Consumer Outbox, inbox deduplication, `IdempotencyRecord`, fail-fast cancellation and settling, conditional UPDATE guard. |
+| *8* | *Worker Host & Step Executors* | ⚪ Planned | MassTransit worker host, `IStepExecutor`, `LogStepExecutor`, `HttpStepExecutor`, step idempotency keys, worker cancellation registry. |
+| *9* | *Scheduler, Triggers & End-to-End Hardening* | ⚪ Planned | Quartz.NET scheduler, deterministic occurrence identity, webhook triggers, misfire policies, end-to-end Testcontainers acceptance and isolation verification. |
 | *10* | *Compensation & Rollback (Future)* | ⚪ Planned | Compensating actions, `Compensating` saga state, compensation commands/events, reverse-dependency execution order, compensation retry policies. |
+
+<!-- > Phase numbering follows the authoritative dependency order in [`phase3_plan.md`](../phase3_plan.md) §16.5. The detailed Phase 4 implementation contract is in [`phase4_plan.md`](../phase4_plan.md). -->
+
 ---
 

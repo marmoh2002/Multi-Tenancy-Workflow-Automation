@@ -1,0 +1,220 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1290" width="100%" height="100%" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+
+  <defs>
+    <pattern id="dotGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#CBD5E1" opacity="0.55"/>
+    </pattern>
+    <filter id="cardShadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0F172A" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrowSlate" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#94A3B8"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="1290" rx="16" fill="#FAFBFD" stroke="#E2E8F0" stroke-width="1.5"/>
+  <rect width="1200" height="1290" rx="16" fill="url(#dotGrid)"/>
+  <g>
+    <text x="110" y="52" font-size="30" font-weight="800" fill="#0F172A" letter-spacing="-0.6">Defense in Depth: How Every Layer Protects Data</text>
+    <text x="110" y="80" font-size="13.5" font-weight="500" fill="#64748B">Multi-tenant workflow automation · each layer independently limits what a bug or attacker can reach.</text>
+    <rect x="878" y="38" width="18" height="12" rx="3" fill="#FFFFFF" stroke="#059669" stroke-width="2"/>
+    <text x="904" y="49" font-size="12" font-weight="600" fill="#475569">Implemented</text>
+    <rect x="1006" y="38" width="18" height="12" rx="3" fill="#FFFFFF" stroke="#D97706" stroke-width="1.8" stroke-dasharray="4 3"/>
+    <text x="1032" y="49" font-size="12" font-weight="600" fill="#475569">Planned</text>
+    <text x="110" y="106" font-size="11" font-weight="500" fill="#94A3B8">Solid border = implemented and covered by the current test suite · dashed border = roadmap contract (Phases 4–9)</text>
+  </g>
+  <g>
+    <rect x="30" y="146" width="30" height="1004" rx="15" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="1.2"/>
+    <text x="45" y="648" transform="rotate(-90 45 648)" text-anchor="middle" font-size="9.5" font-weight="700" letter-spacing="2" fill="#64748B">TENANT BOUNDARY</text>
+    <path d="M 45 122 L 59 128 V 140 C 59 149 52 155 45 159 C 38 155 31 149 31 140 V 128 Z" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.4"/>
+    <polyline points="38,140 43,145 53,133" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g filter="url(#cardShadow)">
+    <rect x="110" y="146" width="1020" height="108" rx="12" fill="#EFF6FF" stroke="#2563EB" stroke-width="2" stroke-dasharray="8 5"/>
+    <rect x="118" y="156" width="5" height="88" rx="2.5" fill="#2563EB"/>
+    <circle cx="154" cy="182" r="17" fill="#2563EB"/>
+    <text x="154" y="187" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">1</text>
+    <text x="184" y="177" font-size="17.5" font-weight="700" fill="#0F172A" letter-spacing="-0.2">Edge &amp; Transport</text>
+    <text x="184" y="200" font-size="13" font-weight="500" fill="#475569">Admits only authenticated, workspace-scoped requests into the platform.</text>
+    <rect x="981.2" y="160" width="130.8" height="22" rx="11" fill="#FEF3C7" stroke="#FCD34D" stroke-width="1"/>
+    <text x="1046.6" y="175" text-anchor="middle" font-size="9.5" font-weight="800" letter-spacing="0.5" fill="#92400E">PLANNED · PHASE 5</text>
+    <rect x="184.0" y="214" width="164.9" height="26" rx="6" fill="#FFFFFF" stroke="#2563EB" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="196.0" cy="227" r="2.6" fill="#2563EB"/>
+    <text x="206.0" y="231.5" font-size="11.5" font-weight="600" fill="#1E293B">HTTPS / TLS in transit</text>
+    <rect x="357.9" y="214" width="129.2" height="26" rx="6" fill="#FFFFFF" stroke="#2563EB" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="369.9" cy="227" r="2.6" fill="#2563EB"/>
+    <text x="379.9" y="231.5" font-size="11.5" font-weight="600" fill="#1E293B">JWT bearer token</text>
+    <rect x="496.1" y="214" width="212.5" height="26" rx="6" fill="#FFFFFF" stroke="#2563EB" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="508.1" cy="227" r="2.6" fill="#2563EB"/>
+    <text x="518.1" y="231.5" font-size="11.5" font-weight="600" fill="#1E293B">X-Workspace-Id request context</text>
+  </g>
+  <line x1="620" y1="255" x2="620" y2="271" stroke="#94A3B8" stroke-width="1.8" marker-end="url(#arrowSlate)"/>
+  <g filter="url(#cardShadow)">
+    <rect x="110" y="274" width="1020" height="108" rx="12" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2" stroke-dasharray="8 5"/>
+    <rect x="118" y="284" width="5" height="88" rx="2.5" fill="#4F46E5"/>
+    <circle cx="154" cy="310" r="17" fill="#4F46E5"/>
+    <text x="154" y="315" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">2</text>
+    <text x="184" y="305" font-size="17.5" font-weight="700" fill="#0F172A" letter-spacing="-0.2">API Host · Authentication &amp; Authorization</text>
+    <text x="184" y="328" font-size="13" font-weight="500" fill="#475569">Resolves the caller&#x27;s workspace and verifies membership before dispatch.</text>
+    <rect x="981.2" y="288" width="130.8" height="22" rx="11" fill="#FEF3C7" stroke="#FCD34D" stroke-width="1"/>
+    <text x="1046.6" y="303" text-anchor="middle" font-size="9.5" font-weight="800" letter-spacing="0.5" fill="#92400E">PLANNED · PHASE 5</text>
+    <rect x="184.0" y="342" width="141.1" height="26" rx="6" fill="#FFFFFF" stroke="#4F46E5" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="196.0" cy="355" r="2.6" fill="#4F46E5"/>
+    <text x="206.0" y="359.5" font-size="11.5" font-weight="600" fill="#1E293B">JWT authentication</text>
+    <rect x="334.1" y="342" width="218.5" height="26" rx="6" fill="#FFFFFF" stroke="#4F46E5" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="346.1" cy="355" r="2.6" fill="#4F46E5"/>
+    <text x="356.1" y="359.5" font-size="11.5" font-weight="600" fill="#1E293B">Workspace resolution middleware</text>
+    <rect x="561.6" y="342" width="218.5" height="26" rx="6" fill="#FFFFFF" stroke="#4F46E5" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="573.6" cy="355" r="2.6" fill="#4F46E5"/>
+    <text x="583.6" y="359.5" font-size="11.5" font-weight="600" fill="#1E293B">Membership + role authorization</text>
+    <rect x="789.0" y="342" width="224.4" height="26" rx="6" fill="#FFFFFF" stroke="#4F46E5" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="801.0" cy="355" r="2.6" fill="#4F46E5"/>
+    <text x="811.0" y="359.5" font-size="11.5" font-weight="600" fill="#1E293B">ProblemDetails without internals</text>
+  </g>
+  <line x1="620" y1="383" x2="620" y2="399" stroke="#94A3B8" stroke-width="1.8" marker-end="url(#arrowSlate)"/>
+  <g filter="url(#cardShadow)">
+    <rect x="110" y="402" width="1020" height="108" rx="12" fill="#F5F3FF" stroke="#7C3AED" stroke-width="2" stroke-dasharray="8 5"/>
+    <rect x="118" y="412" width="5" height="88" rx="2.5" fill="#7C3AED"/>
+    <circle cx="154" cy="438" r="17" fill="#7C3AED"/>
+    <text x="154" y="443" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">3</text>
+    <text x="184" y="433" font-size="17.5" font-weight="700" fill="#0F172A" letter-spacing="-0.2">Application · CQRS Pipeline</text>
+    <text x="184" y="456" font-size="13" font-weight="500" fill="#475569">Fails closed without a workspace and validates every command before it changes state.</text>
+    <rect x="981.2" y="416" width="130.8" height="22" rx="11" fill="#FEF3C7" stroke="#FCD34D" stroke-width="1"/>
+    <text x="1046.6" y="431" text-anchor="middle" font-size="9.5" font-weight="800" letter-spacing="0.5" fill="#92400E">PLANNED · PHASE 4</text>
+    <rect x="184.0" y="470" width="260.1" height="26" rx="6" fill="#FFFFFF" stroke="#7C3AED" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="196.0" cy="483" r="2.6" fill="#7C3AED"/>
+    <text x="206.0" y="487.5" font-size="11.5" font-weight="600" fill="#1E293B">WorkspaceContextBehavior (fail-closed)</text>
+    <rect x="453.1" y="470" width="182.8" height="26" rx="6" fill="#FFFFFF" stroke="#7C3AED" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="465.1" cy="483" r="2.6" fill="#7C3AED"/>
+    <text x="475.1" y="487.5" font-size="11.5" font-weight="600" fill="#1E293B">FluentValidation behavior</text>
+    <rect x="644.9" y="470" width="200.6" height="26" rx="6" fill="#FFFFFF" stroke="#7C3AED" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="656.9" cy="483" r="2.6" fill="#7C3AED"/>
+    <text x="666.9" y="487.5" font-size="11.5" font-weight="600" fill="#1E293B">TransactionBehavior (atomic)</text>
+    <rect x="854.5" y="470" width="230.3" height="26" rx="6" fill="#FFFFFF" stroke="#7C3AED" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="866.5" cy="483" r="2.6" fill="#7C3AED"/>
+    <text x="876.5" y="487.5" font-size="11.5" font-weight="600" fill="#1E293B">Exception translation (EF/Npgsql)</text>
+  </g>
+  <line x1="620" y1="511" x2="620" y2="527" stroke="#94A3B8" stroke-width="1.8" marker-end="url(#arrowSlate)"/>
+  <g filter="url(#cardShadow)">
+    <rect x="110" y="530" width="1020" height="108" rx="12" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+    <rect x="118" y="540" width="5" height="88" rx="2.5" fill="#059669"/>
+    <circle cx="154" cy="566" r="17" fill="#059669"/>
+    <text x="154" y="571" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">4</text>
+    <text x="184" y="561" font-size="17.5" font-weight="700" fill="#0F172A" letter-spacing="-0.2">Domain · Aggregates &amp; Invariants</text>
+    <text x="184" y="584" font-size="13" font-weight="500" fill="#475569">Makes illegal state and cross-workspace references impossible in memory.</text>
+    <rect x="1019.6" y="544" width="92.4" height="22" rx="11" fill="#DCFCE7" stroke="#86EFAC" stroke-width="1"/>
+    <text x="1065.8" y="559" text-anchor="middle" font-size="9.5" font-weight="800" letter-spacing="0.5" fill="#166534">IMPLEMENTED</text>
+    <rect x="184.0" y="598" width="242.2" height="26" rx="6" fill="#FFFFFF" stroke="#059669" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="196.0" cy="611" r="2.6" fill="#059669"/>
+    <text x="206.0" y="615.5" font-size="11.5" font-weight="600" fill="#1E293B">Ownership checks on every aggregate</text>
+    <rect x="435.2" y="598" width="218.5" height="26" rx="6" fill="#FFFFFF" stroke="#059669" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="447.2" cy="611" r="2.6" fill="#059669"/>
+    <text x="457.2" y="615.5" font-size="11.5" font-weight="600" fill="#1E293B">Draft / publish lifecycle rules</text>
+    <rect x="662.7" y="598" width="158.9" height="26" rx="6" fill="#FFFFFF" stroke="#059669" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="674.7" cy="611" r="2.6" fill="#059669"/>
+    <text x="684.7" y="615.5" font-size="11.5" font-weight="600" fill="#1E293B">DAG validation (Kahn)</text>
+    <rect x="830.7" y="598" width="170.8" height="26" rx="6" fill="#FFFFFF" stroke="#059669" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="842.7" cy="611" r="2.6" fill="#059669"/>
+    <text x="852.7" y="615.5" font-size="11.5" font-weight="600" fill="#1E293B">Execution state machine</text>
+  </g>
+  <line x1="620" y1="639" x2="620" y2="655" stroke="#94A3B8" stroke-width="1.8" marker-end="url(#arrowSlate)"/>
+  <g filter="url(#cardShadow)">
+    <rect x="110" y="658" width="1020" height="108" rx="12" fill="#F0FDFA" stroke="#0D9488" stroke-width="2"/>
+    <rect x="118" y="668" width="5" height="88" rx="2.5" fill="#0D9488"/>
+    <circle cx="154" cy="694" r="17" fill="#0D9488"/>
+    <text x="154" y="699" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">5</text>
+    <text x="184" y="689" font-size="17.5" font-weight="700" fill="#0F172A" letter-spacing="-0.2">Persistence · EF Core Guards</text>
+    <text x="184" y="712" font-size="13" font-weight="500" fill="#475569">Scopes every read to the active workspace and blocks every cross-workspace write.</text>
+    <rect x="1019.6" y="672" width="92.4" height="22" rx="11" fill="#DCFCE7" stroke="#86EFAC" stroke-width="1"/>
+    <text x="1065.8" y="687" text-anchor="middle" font-size="9.5" font-weight="800" letter-spacing="0.5" fill="#166534">IMPLEMENTED</text>
+    <rect x="184.0" y="726" width="236.3" height="26" rx="6" fill="#FFFFFF" stroke="#0D9488" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="196.0" cy="739" r="2.6" fill="#0D9488"/>
+    <text x="206.0" y="743.5" font-size="11.5" font-weight="600" fill="#1E293B">Global query filters (fail-closed)</text>
+    <rect x="429.3" y="726" width="224.4" height="26" rx="6" fill="#FFFFFF" stroke="#0D9488" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="441.3" cy="739" r="2.6" fill="#0D9488"/>
+    <text x="451.3" y="743.5" font-size="11.5" font-weight="600" fill="#1E293B">TenantWriteValidationInterceptor</text>
+    <rect x="662.7" y="726" width="224.4" height="26" rx="6" fill="#FFFFFF" stroke="#0D9488" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="674.7" cy="739" r="2.6" fill="#0D9488"/>
+    <text x="684.7" y="743.5" font-size="11.5" font-weight="600" fill="#1E293B">Version immutability interceptor</text>
+    <rect x="896.1" y="726" width="194.7" height="26" rx="6" fill="#FFFFFF" stroke="#0D9488" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="908.1" cy="739" r="2.6" fill="#0D9488"/>
+    <text x="918.1" y="743.5" font-size="11.5" font-weight="600" fill="#1E293B">xmin optimistic concurrency</text>
+  </g>
+  <line x1="620" y1="767" x2="620" y2="783" stroke="#94A3B8" stroke-width="1.8" marker-end="url(#arrowSlate)"/>
+  <g filter="url(#cardShadow)">
+    <rect x="110" y="786" width="1020" height="108" rx="12" fill="#F0F9FF" stroke="#0284C7" stroke-width="2"/>
+    <rect x="118" y="796" width="5" height="88" rx="2.5" fill="#0284C7"/>
+    <circle cx="154" cy="822" r="17" fill="#0284C7"/>
+    <text x="154" y="827" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">6</text>
+    <text x="184" y="817" font-size="17.5" font-weight="700" fill="#0F172A" letter-spacing="-0.2">Database · PostgreSQL Constraints</text>
+    <text x="184" y="840" font-size="13" font-weight="500" fill="#475569">Independently rejects orphaned, invalid, duplicate, or contradictory rows.</text>
+    <rect x="1019.6" y="800" width="92.4" height="22" rx="11" fill="#DCFCE7" stroke="#86EFAC" stroke-width="1"/>
+    <text x="1065.8" y="815" text-anchor="middle" font-size="9.5" font-weight="800" letter-spacing="0.5" fill="#166534">IMPLEMENTED</text>
+    <rect x="184.0" y="854" width="224.4" height="26" rx="6" fill="#FFFFFF" stroke="#0284C7" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="196.0" cy="867" r="2.6" fill="#0284C7"/>
+    <text x="206.0" y="871.5" font-size="11.5" font-weight="600" fill="#1E293B">Composite workspace foreign keys</text>
+    <rect x="417.4" y="854" width="236.3" height="26" rx="6" fill="#FFFFFF" stroke="#0284C7" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="429.4" cy="867" r="2.6" fill="#0284C7"/>
+    <text x="439.4" y="871.5" font-size="11.5" font-weight="600" fill="#1E293B">Restrict / cascade delete policies</text>
+    <rect x="662.7" y="854" width="117.3" height="26" rx="6" fill="#FFFFFF" stroke="#0284C7" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="674.7" cy="867" r="2.6" fill="#0284C7"/>
+    <text x="684.7" y="871.5" font-size="11.5" font-weight="600" fill="#1E293B">Unique indexes</text>
+    <rect x="789.0" y="854" width="224.4" height="26" rx="6" fill="#FFFFFF" stroke="#0284C7" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="801.0" cy="867" r="2.6" fill="#0284C7"/>
+    <text x="811.0" y="871.5" font-size="11.5" font-weight="600" fill="#1E293B">CHECK constraints (JSON + state)</text>
+  </g>
+  <line x1="620" y1="895" x2="620" y2="911" stroke="#94A3B8" stroke-width="1.8" marker-end="url(#arrowSlate)"/>
+  <g filter="url(#cardShadow)">
+    <rect x="110" y="914" width="1020" height="108" rx="12" fill="#FFF7ED" stroke="#EA580C" stroke-width="2"/>
+    <rect x="118" y="924" width="5" height="88" rx="2.5" fill="#EA580C"/>
+    <circle cx="154" cy="950" r="17" fill="#EA580C"/>
+    <text x="154" y="955" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">7</text>
+    <text x="184" y="945" font-size="17.5" font-weight="700" fill="#0F172A" letter-spacing="-0.2">Data at Rest · Secrets &amp; Immutable History</text>
+    <text x="184" y="968" font-size="13" font-weight="500" fill="#475569">Keeps credentials out of definitions and makes execution snapshots tamper-evident.</text>
+    <rect x="1019.6" y="928" width="92.4" height="22" rx="11" fill="#DCFCE7" stroke="#86EFAC" stroke-width="1"/>
+    <text x="1065.8" y="943" text-anchor="middle" font-size="9.5" font-weight="800" letter-spacing="0.5" fill="#166534">IMPLEMENTED</text>
+    <rect x="184.0" y="982" width="236.3" height="26" rx="6" fill="#FFFFFF" stroke="#EA580C" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="196.0" cy="995" r="2.6" fill="#EA580C"/>
+    <text x="206.0" y="999.5" font-size="11.5" font-weight="600" fill="#1E293B">EncryptedCredentials per workspace</text>
+    <rect x="429.3" y="982" width="248.2" height="26" rx="6" fill="#FFFFFF" stroke="#EA580C" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="441.3" cy="995" r="2.6" fill="#EA580C"/>
+    <text x="451.3" y="999.5" font-size="11.5" font-weight="600" fill="#1E293B">Secrets never in version definitions</text>
+    <rect x="686.5" y="982" width="158.9" height="26" rx="6" fill="#FFFFFF" stroke="#EA580C" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="698.5" cy="995" r="2.6" fill="#EA580C"/>
+    <text x="708.5" y="999.5" font-size="11.5" font-weight="600" fill="#1E293B">SHA-256 snapshot hash</text>
+    <rect x="854.5" y="982" width="218.5" height="26" rx="6" fill="#FFFFFF" stroke="#EA580C" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="866.5" cy="995" r="2.6" fill="#EA580C"/>
+    <text x="876.5" y="999.5" font-size="11.5" font-weight="600" fill="#1E293B">History retained after deletion</text>
+  </g>
+  <line x1="620" y1="1023" x2="620" y2="1039" stroke="#94A3B8" stroke-width="1.8" marker-end="url(#arrowSlate)"/>
+  <g filter="url(#cardShadow)">
+    <rect x="110" y="1042" width="1020" height="108" rx="12" fill="#FFFBEB" stroke="#D97706" stroke-width="2" stroke-dasharray="8 5"/>
+    <rect x="118" y="1052" width="5" height="88" rx="2.5" fill="#D97706"/>
+    <circle cx="154" cy="1078" r="17" fill="#D97706"/>
+    <text x="154" y="1083" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">8</text>
+    <text x="184" y="1073" font-size="17.5" font-weight="700" fill="#0F172A" letter-spacing="-0.2">Async Runtime · Messaging &amp; Workers</text>
+    <text x="184" y="1096" font-size="13" font-weight="500" fill="#475569">Carries tenant identity through queues and makes duplicate or stale deliveries harmless.</text>
+    <rect x="962.0" y="1056" width="150.0" height="22" rx="11" fill="#FEF3C7" stroke="#FCD34D" stroke-width="1"/>
+    <text x="1037.0" y="1071" text-anchor="middle" font-size="9.5" font-weight="800" letter-spacing="0.5" fill="#92400E">PLANNED · PHASES 7–9</text>
+    <rect x="184.0" y="1110" width="200.6" height="26" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="196.0" cy="1123" r="2.6" fill="#D97706"/>
+    <text x="206.0" y="1127.5" font-size="11.5" font-weight="600" fill="#1E293B">Workspace in message headers</text>
+    <rect x="393.6" y="1110" width="200.6" height="26" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="405.6" cy="1123" r="2.6" fill="#D97706"/>
+    <text x="415.6" y="1127.5" font-size="11.5" font-weight="600" fill="#1E293B">Outbox + inbox deduplication</text>
+    <rect x="603.2" y="1110" width="129.2" height="26" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="615.2" cy="1123" r="2.6" fill="#D97706"/>
+    <text x="625.2" y="1127.5" font-size="11.5" font-weight="600" fill="#1E293B">Idempotency keys</text>
+    <rect x="741.4" y="1110" width="212.5" height="26" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-opacity="0.38" stroke-width="1.2"/>
+    <circle cx="753.4" cy="1123" r="2.6" fill="#D97706"/>
+    <text x="763.4" y="1127.5" font-size="11.5" font-weight="600" fill="#1E293B">Saga xmin + cancellation guard</text>
+  </g>
+  <g filter="url(#cardShadow)">
+    <rect x="110" y="1180" width="1020" height="74" rx="12" fill="#0F172A"/>
+    <path d="M 154 1198 L 170 1205 V 1219 C 170 1229 162 1236 154 1240 C 146 1236 138 1229 138 1219 V 1205 Z" fill="#1E293B" stroke="#64748B" stroke-width="1.4"/>
+    <polyline points="146,1219 152,1225 163,1211" fill="none" stroke="#38BDF8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="186" y="1211" font-size="14.5" font-weight="700" fill="#F8FAFC">Every layer assumes the one above it can fail.</text>
+    <text x="186" y="1233" font-size="12.5" font-weight="500" fill="#CBD5E1">A missed filter is still contained by the write interceptor, the composite foreign key, and the CHECK constraint.</text>
+    <text x="1110" y="1211" text-anchor="end" font-size="9.5" font-weight="800" letter-spacing="2" fill="#64748B">DEFENSE IN DEPTH</text>
+  </g>
+</svg>
