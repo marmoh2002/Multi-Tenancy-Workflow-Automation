@@ -87,8 +87,8 @@ WorkflowAutomation.slnx
 │           └── WorkflowAutomation.Workflows.Core/     # KahnDagValidator, Workflow models, DAG validation
 │
 └── tests/
-    ├── WorkflowAutomation.Workflows.Core.Tests/       # 214 passing xUnit workflow/domain tests
-    └── WorkflowAutomation.Integration.Tests/          # 103 passing integration tests (PostgreSQL via Testcontainers)
+    ├── WorkflowAutomation.Workflows.Core.Tests/       # 218 passing xUnit workflow/domain tests
+    └── WorkflowAutomation.Integration.Tests/          # 104 passing integration tests (PostgreSQL via Testcontainers)
 ```
 
 ### Target State
@@ -363,10 +363,10 @@ PostgreSQL integration tests cover the execution snapshot round-trip, tenant-sco
 
 <summary>details</summary>
 
-317 passing xUnit test cases across two test projects:
-- *`WorkflowAutomation.Workflows.Core.Tests` (214 tests)*:
+322 passing xUnit test cases across two test projects:
+- *`WorkflowAutomation.Workflows.Core.Tests` (218 tests)*:
   - DAG validation, workflow/version aggregate lifecycles, definition serialization, `WorkflowExecution` creation, snapshot, and state-machine rules, and `WorkflowStepExecution` lifecycle transitions, invariants, and terminal immutability.
-- *`WorkflowAutomation.Integration.Tests` (103 tests)*:
+- *`WorkflowAutomation.Integration.Tests` (104 tests)*:
   - `GlobalQueryFilterTests` (3 tests): Verifies fail-closed behavior (unauthenticated context yields 0 records), cross-tenant isolation (Workspace A cannot see Workspace B data), and the controlled `IgnoreQueryFilters` bootstrap path.
   - `TenantWriteValidationInterceptorTests` (9 tests): Verifies write-side isolation on PostgreSQL via Testcontainers, including matching-workspace writes, cross-workspace inserts, updates, and deletes, missing workspace context, synchronous and asynchronous `SaveChanges` paths, and scope isolation.
   - `DependencyInjectionLifetimeTests` (2 tests): Verifies `WorkspaceContext` and `IWorkspaceContext` resolve to the exact same reference within a scope, and that distinct scopes remain completely isolated.
@@ -374,7 +374,7 @@ PostgreSQL integration tests cover the execution snapshot round-trip, tenant-sco
   - `WorkflowConstraintTests` (12 tests): Verifies PostgreSQL check constraints for workflow names, active-version consistency, version numbers/schema versions, JSON definitions, publication metadata, and deletion cascades.
   - `WorkflowConcurrencyTests` (7 tests): Verifies optimistic concurrency (`xmin`) across concurrent draft edits, publication, deletion, and workflow metadata updates.
   - `WorkflowVersionImmutabilityInterceptorTests` (9 tests): Verifies draft mutability, publication transitions, published-version immutability, and independent vs. cascade deletion rules.
-  - `WorkflowExecutionPersistenceTests` (3 tests): Verifies immutable snapshot round-tripping, cross-tenant execution isolation, and retention of terminal executions and their step attempts after workflow deletion.
+  - `WorkflowExecutionPersistenceTests` (4 tests): Verifies immutable snapshot round-tripping, cross-tenant execution isolation, cross-workspace write rejection, and retention of terminal executions and their step attempts after workflow deletion.
   - `WorkflowExecutionConstraintTests` (17 tests): Verifies PostgreSQL check constraints for execution names, versions, snapshots, hashes, status/timestamps, cancellation metadata, and enums through raw SQL inserts.
   - `WorkflowStepExecutionPersistenceTests` (10 tests): Verifies step-attempt lifecycle round-trips, per-attempt uniqueness, tenant query isolation, cross-workspace write rejection, composite foreign-key enforcement, and cascade deletion with the parent execution.
   - `WorkflowStepExecutionConstraintTests` (21 tests): Verifies all 13 PostgreSQL check constraints for step identifiers, attempt numbers, status/timestamp consistency, exclusive finish timestamps, and conditional fields through raw SQL inserts.
@@ -414,9 +414,9 @@ dotnet build WorkflowAutomation.slnx
 dotnet test WorkflowAutomation.slnx
 ```
 
-All *317 tests* (214 workflow/domain unit tests + 103 integration tests) should pass:
-- `WorkflowAutomation.Workflows.Core.Tests`: 214 passed
-- `WorkflowAutomation.Integration.Tests`: 103 passed
+All *322 tests* (218 workflow/domain unit tests + 104 integration tests) should pass:
+- `WorkflowAutomation.Workflows.Core.Tests`: 218 passed
+- `WorkflowAutomation.Integration.Tests`: 104 passed
 
 The integration suite requires Docker because the PostgreSQL-backed test classes start disposable PostgreSQL containers through Testcontainers.
 
@@ -462,7 +462,7 @@ The integration suite requires Docker because the PostgreSQL-backed test classes
 |:---|:---|:---:|:---|
 | *1* | *Solution Structure & Core Migration* | ✅ Complete | Created `WorkflowAutomation.slnx`. Established `Shared.Kernel`, `Shared.Contracts`, `Workflows.Core`, `Identity.Core`, and `Workspaces.Core`. Verified all 8 unit tests pass. |
 | *2* | *Identity, Workspaces & Multi-Tenancy Persistence* | ✅ Complete | `ApplicationDbContext` in `WorkflowAutomation.Infrastructure`, EF entity configurations (Workspace, Membership, Connection), Global Query Filters, DI registration, `InitialIdentityAndWorkspaces` migration, and 14 passing integration tests. |
-| *3* | *Workflow & Version Persistence* | ⚪ Planned | `Workflow`, `WorkflowVersion` (immutable definitions), `WorkflowExecution` (including `CancellationRequestedAt` and `CancellationReason` columns), `WorkflowStepExecution`. |
+| *3* | *Workflow & Version Persistence* | ✅ Complete | `Workflow`, `WorkflowVersion` (immutable definitions), `WorkflowExecution` (including `CancellationRequestedAt` and `CancellationReason` columns), `WorkflowStepExecution`, EF migrations, and execution/step persistence test coverage. |
 | *4* | *API Idempotency & Bus Outbox* | ⚪ Planned | `IdempotencyRecord`. API-side Bus Outbox. Execution creation transaction with deduplication. |
 | *5* | *Saga & Fail-Fast Orchestration* | ⚪ Planned | `WorkflowExecutionSaga`. `IWorkflowEngine` DAG step selector. Fail-fast cancellation and settling logic. Conditional UPDATE guard for `CancellationRequestedAt`. |
 | *6* | *Worker Host & Step Executors* | ⚪ Planned | MassTransit worker host. Consumer Outbox. `IStepExecutor` interface. `LogStepExecutor`, `HttpStepExecutor`. Step executor idempotency keys (`{ExecutionId}:{StepId}:{AttemptNumber}`). |
